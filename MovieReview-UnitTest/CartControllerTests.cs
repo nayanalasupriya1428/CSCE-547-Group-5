@@ -174,5 +174,90 @@ namespace MovieReviewApi.Tests
             var notFoundResult = result as NotFoundObjectResult;
             Assert.AreEqual("Cart not found.", notFoundResult.Value);
         }
+
+        [TestMethod]
+        public async Task RemoveTicketFromCart_ShouldReturnNotFound_WhenTicketNotInCart()
+        {
+            // Arrange
+            int cartId = 1;
+            int ticketNotInCartId = 3;
+
+            // Act
+            var result = await _controller.RemoveTicketFromCart(cartId, ticketNotInCartId);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(NotFoundObjectResult));
+
+            var notFoundResult = result as NotFoundObjectResult;
+            Assert.AreEqual("Ticket not found in cart.", notFoundResult.Value);
+        }
+
+
+        [TestMethod]
+        public async Task GetCart_ShouldReturnExistingCart()
+        {
+            // Arrange
+            int existingCartId = 1; // Cart ID that exists from seed data
+
+            // Act
+            var result = await _controller.GetCart(existingCartId);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
+
+            var okResult = result.Result as OkObjectResult;
+            Assert.IsNotNull(okResult);
+
+            var cart = okResult.Value as Cart;
+            Assert.IsNotNull(cart);
+            Assert.AreEqual(existingCartId, cart.CartId);
+            Assert.AreEqual(2, cart.CartItems.Count);
+        }
+
+        [TestMethod]
+        public async Task GetCart_ShouldReturnNotFound_WhenCartDoesNotExist()
+        {
+            // Arrange
+            int nonExistentCartId = 999; // Cart ID that does not exist
+
+            // Act
+            var result = await _controller.GetCart(nonExistentCartId);
+
+            // Assert
+            Assert.IsNotNull(result);                                         // Ensure the result is not null
+            Assert.IsInstanceOfType(result.Result, typeof(NotFoundObjectResult)); // Ensure the response is NotFoundObjectResult
+
+            var notFoundResult = result.Result as NotFoundObjectResult;
+            Assert.AreEqual("Cart not found.", notFoundResult.Value);         // Verify the returned message
+        }
+
+        [TestMethod]
+        public async Task GetCart_ShouldCreateNewCart_WhenNoCartIdProvided()
+        {
+            // Arrange
+            int initialCartCount = _context.Carts.Count(); // Get initial cart count
+
+            // Act
+            var result = await _controller.GetCart();
+
+            // Assert
+            Assert.IsNotNull(result);                                         // Ensure the result is not null
+            Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));   // Ensure the response is OkObjectResult
+
+            var okResult = result.Result as OkObjectResult;
+            Assert.IsNotNull(okResult);                                       // Ensure cast was successful
+
+            var newCart = okResult.Value as Cart;                             // Retrieve the new cart from the response
+            Assert.IsNotNull(newCart);                                        // Ensure the new cart is not null
+            Assert.AreNotEqual(0, newCart.CartId);                           // Ensure the cart ID is assigned
+
+            // Verify that a new cart was added to the database
+            int newCartCount = _context.Carts.Count();
+            Assert.AreEqual(initialCartCount + 1, newCartCount);             // Ensure the cart count increased by 1
+        }
+
+
     }
 }
