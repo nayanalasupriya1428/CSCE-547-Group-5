@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using MovieReviewApi.Models; // Ensure this namespace is correct and points to your models
+using MovieReviewApi.Models; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +59,7 @@ void SeedDatabase(WebApplication app)
         {
             var movie1 = new Movie { Id = 1, MovieTitle = "The Shawshank Redemption", Genre = "Thriller", Rating = 5 };
             var movie2 = new Movie { Id = 2, MovieTitle = "The Godfather", Genre = "Action", Rating = 5 };
+            var movie3 = new Movie { Id = 3, MovieTitle = "dhgfejyg", Genre = "Action", Rating = 5 };
 
             var ticket1 = new Ticket { TicketId = 1, MovieId = movie1.Id, EventName = "Shawshank Screening", Price = 10 };
             var ticket2 = new Ticket { TicketId = 2, MovieId = movie2.Id, EventName = "Godfather Screening", Price = 12 };

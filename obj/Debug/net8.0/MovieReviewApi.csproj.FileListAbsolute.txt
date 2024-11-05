@@ -450,3 +450,4 @@ C:\Users\nayan\CSCE-547-Group-5-Project\MovieReviewApi\bin\Debug\net8.0\runtimes
 C:\Users\nayan\CSCE-547-Group-5-Project\MovieReviewApi\obj\Debug\net8.0\MvcTestingAppManifest.json
 C:\Users\nayan\CSCE-547-Group-5-Project\MovieReviewApi\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\nayan\CSCE-547-Group-5-Project\MovieReviewApi\bin\Debug\net8.0\NuGet.Frameworks.dll
+C:\Users\nayan\CSCE-547-Group-5-Project\MovieReviewApi\obj\Debug\net8.0\MovieReviewApi.sourcelink.json
