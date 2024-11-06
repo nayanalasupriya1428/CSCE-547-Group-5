@@ -72,22 +72,28 @@ namespace MovieReviewApi.Tests
             var result = await _controller.AddTicketToCart(cartId, ticketId, quantity);
 
             // Assert
-            Assert.IsNotNull(result);
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
+            Assert.IsNotNull(result); // Check that the result is not null
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult)); // Ensure that the result is OkObjectResult
 
             var okResult = result as OkObjectResult;
-            Assert.IsNotNull(okResult);
+            Assert.IsNotNull(okResult); // Ensure okResult is not null
 
-            var response = okResult.Value as dynamic;
-            Assert.AreEqual("Ticket added to cart successfully.", response.Message);
+            var messageProperty = okResult.Value.GetType().GetProperty("Message");
+            Assert.IsNotNull(messageProperty, "Message property should exist in response");
+            var message = messageProperty.GetValue(okResult.Value) as string;
+            Assert.AreEqual("Ticket added to cart successfully.", message);
 
-            // Verify ticket is added to the cart
-            var updatedCart = await _context.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.CartId == cartId);
-            Assert.IsNotNull(updatedCart);
+            // Verify that the ticket was added to the cart with the updated quantity
+            var updatedCart = await _context.Carts.Include(c => c.CartItems)
+                                                  .FirstOrDefaultAsync(c => c.CartId == cartId);
+            Assert.IsNotNull(updatedCart); // Ensure updated cart is not null
+
+            // Check if the correct ticket was added to the cart
             var cartItem = updatedCart.CartItems.FirstOrDefault(ci => ci.TicketId == ticketId);
-            Assert.IsNotNull(cartItem);
-            Assert.AreEqual(3, cartItem.Quantity);
+            Assert.IsNotNull(cartItem); // Ensure that the ticket exists in the cart
+            Assert.AreEqual(3, cartItem.Quantity); // Quantity should be the sum of existing and added quantity (2 + 1 = 3)
         }
+
 
         [TestMethod]
         public async Task AddTicketToCart_ShouldReturnNotFound_WhenCartDoesNotExist()
@@ -129,8 +135,8 @@ namespace MovieReviewApi.Tests
         public async Task RemoveTicketFromCart_ShouldRemoveTicketSuccessfully()
         {
             // Arrange
-            int cartId = 1;          // The cart ID that exists (from seed data)
-            int ticketId = 1;        // The ticket ID that exists in the cart (from seed data)
+            int cartId = 1;      // The cart ID that exists (from seed data)
+            int ticketId = 1;    // The ticket ID that exists in the cart (from seed data)
 
             // Act
             var result = await _controller.RemoveTicketFromCart(cartId, ticketId);
@@ -154,8 +160,11 @@ namespace MovieReviewApi.Tests
 
             // Verify the total amount after removing the ticket
             var totalAmount = updatedCart.CartItems.Sum(ci => ci.Quantity * ci.Ticket.Price);
-            Assert.AreEqual(response.Total, totalAmount);
+            var totalProperty = response.GetType().GetProperty("Total");
+            var total = totalProperty.GetValue(response) as decimal?;
+            Assert.AreEqual(totalAmount, total);
         }
+
 
         [TestMethod]
         public async Task RemoveTicketFromCart_ShouldReturnNotFound_WhenCartDoesNotExist()

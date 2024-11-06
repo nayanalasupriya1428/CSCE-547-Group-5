@@ -88,10 +88,18 @@ namespace MovieReviewApi.Tests
             var okResult = result as OkObjectResult;
             Assert.IsNotNull(okResult); // Ensure cast is successful
 
-            // Access the response content
-            dynamic response = okResult.Value;
-            Assert.AreEqual("Payment successful!", response.Message);
-            Assert.AreEqual(40.00M, response.TotalAmount); // The total amount for cart ID 1 should be 40.00
+            var responseValue = okResult.Value;
+
+            // Use reflection to access the "Message" property
+            var messageProperty = responseValue.GetType().GetProperty("Message");
+            var message = messageProperty?.GetValue(responseValue) as string;
+            Assert.AreEqual("Payment successful!", message);
+
+            // Use reflection to access the "TotalAmount" property
+            var totalAmountProperty = responseValue.GetType().GetProperty("TotalAmount");
+            var totalAmount = totalAmountProperty?.GetValue(responseValue) as decimal?;
+            Assert.AreEqual(40.00M, totalAmount);
+
         }
 
         [TestMethod]
