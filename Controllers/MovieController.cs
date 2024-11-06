@@ -32,20 +32,20 @@ namespace MovieReviewApi.Controllers
             return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
         }
         // DELETE: api/MovieReviews/{id}
-[HttpDelete("{id}")]
-public async Task<IActionResult> DeleteMovie(int id)
-{
-    var movie = await _context.Movie.FindAsync(id);
-    if (movie == null)
-    {
-        return NotFound();
-    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMovie(int id)
+        {
+            var movie = await _context.Movie.FindAsync(id);
+            if (movie == null)
+            {
+                return NotFound();
+            }
 
-    _context.Movie.Remove(movie);
-    await _context.SaveChangesAsync();
+            _context.Movie.Remove(movie);
+            await _context.SaveChangesAsync();
 
-    return NoContent(); // Correct response type after a deletion
-}
+            return NoContent(); // Correct response type after a deletion
+        }
 
     }
 }
