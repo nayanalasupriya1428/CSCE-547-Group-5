@@ -7,3 +7,5 @@
 /obj
 /MovieReview-UnitTest/obj
 /MovieReviewApi.Tests/obj
+/Tests/bin/Debug/net8.0
+/Tests/obj
