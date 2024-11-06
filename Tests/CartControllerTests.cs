@@ -1,6 +1,9 @@
+// @author Scott Do (Reshlynt)
+// Unit tests for CartController class in MovieReviewApi.
+// @date 2024-11-5
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MovieReviewApi.Models;
 
 namespace MovieReviewApi.Tests
@@ -14,21 +17,20 @@ namespace MovieReviewApi.Tests
         [TestInitialize]
         public void Setup()
         {
-            // 1. Set up In-Memory Database for MovieContext
+            // Set up In-Memory Database for MovieContext with unique database for each test
             var options = new DbContextOptionsBuilder<MovieContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid().ToString()) // Use unique DB for each test
+                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid().ToString())
                 .Options;
 
             _context = new MovieContext(options);
-
-            // 2. Seed the Database with Initial Data (if needed)
             SeedTestData(_context);
-
-            // 3. Set up the Controller with the Context
             _controller = new CartController(_context);
         }
 
-        // Helper method to seed data into the in-memory database
+        /// <summary>
+        /// Seeds the in-memory database with initial data for testing purposes.
+        /// </summary>
+        /// <param name="context">The in-memory movie context to be seeded with test data.</param>
         private void SeedTestData(MovieContext context)
         {
             var cart = new Cart
@@ -60,6 +62,9 @@ namespace MovieReviewApi.Tests
             context.SaveChanges();
         }
 
+        /// <summary>
+        /// Tests that a ticket can be added to an existing cart successfully.
+        /// </summary>
         [TestMethod]
         public async Task AddTicketToCart_ShouldAddTicketSuccessfully()
         {
@@ -72,29 +77,29 @@ namespace MovieReviewApi.Tests
             var result = await _controller.AddTicketToCart(cartId, ticketId, quantity);
 
             // Assert
-            Assert.IsNotNull(result); // Check that the result is not null
-            Assert.IsInstanceOfType(result, typeof(OkObjectResult)); // Ensure that the result is OkObjectResult
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result, typeof(OkObjectResult));
 
             var okResult = result as OkObjectResult;
-            Assert.IsNotNull(okResult); // Ensure okResult is not null
+            Assert.IsNotNull(okResult);
 
             var messageProperty = okResult.Value.GetType().GetProperty("Message");
             Assert.IsNotNull(messageProperty, "Message property should exist in response");
             var message = messageProperty.GetValue(okResult.Value) as string;
             Assert.AreEqual("Ticket added to cart successfully.", message);
 
-            // Verify that the ticket was added to the cart with the updated quantity
             var updatedCart = await _context.Carts.Include(c => c.CartItems)
                                                   .FirstOrDefaultAsync(c => c.CartId == cartId);
-            Assert.IsNotNull(updatedCart); // Ensure updated cart is not null
+            Assert.IsNotNull(updatedCart);
 
-            // Check if the correct ticket was added to the cart
             var cartItem = updatedCart.CartItems.FirstOrDefault(ci => ci.TicketId == ticketId);
-            Assert.IsNotNull(cartItem); // Ensure that the ticket exists in the cart
-            Assert.AreEqual(3, cartItem.Quantity); // Quantity should be the sum of existing and added quantity (2 + 1 = 3)
+            Assert.IsNotNull(cartItem);
+            Assert.AreEqual(3, cartItem.Quantity); // Existing quantity (2) + added quantity (1) = 3
         }
 
-
+        /// <summary>
+        /// Tests that adding a ticket to a non-existent cart returns NotFound.
+        /// </summary>
         [TestMethod]
         public async Task AddTicketToCart_ShouldReturnNotFound_WhenCartDoesNotExist()
         {
@@ -113,6 +118,9 @@ namespace MovieReviewApi.Tests
             Assert.AreEqual("Cart not found.", notFoundResult.Value);
         }
 
+        /// <summary>
+        /// Tests that adding a non-existent ticket to a cart returns NotFound.
+        /// </summary>
         [TestMethod]
         public async Task AddTicketToCart_ShouldReturnNotFound_WhenTicketDoesNotExist()
         {
@@ -131,12 +139,15 @@ namespace MovieReviewApi.Tests
             Assert.AreEqual("Ticket not found.", notFoundResult.Value);
         }
 
+        /// <summary>
+        /// Tests that a ticket can be removed from an existing cart successfully.
+        /// </summary>
         [TestMethod]
         public async Task RemoveTicketFromCart_ShouldRemoveTicketSuccessfully()
         {
             // Arrange
-            int cartId = 1;      // The cart ID that exists (from seed data)
-            int ticketId = 1;    // The ticket ID that exists in the cart (from seed data)
+            int cartId = 1;
+            int ticketId = 1;
 
             // Act
             var result = await _controller.RemoveTicketFromCart(cartId, ticketId);
@@ -151,26 +162,26 @@ namespace MovieReviewApi.Tests
             var response = okResult.Value as dynamic;
             Assert.IsNotNull(response);
 
-            // Verify that the ticket was removed from the cart
             var updatedCart = await _context.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.CartId == cartId);
             Assert.IsNotNull(updatedCart);
 
             var removedItem = updatedCart.CartItems.FirstOrDefault(ci => ci.TicketId == ticketId);
             Assert.IsNull(removedItem);
 
-            // Verify the total amount after removing the ticket
             var totalAmount = updatedCart.CartItems.Sum(ci => ci.Quantity * ci.Ticket.Price);
             var totalProperty = response.GetType().GetProperty("Total");
             var total = totalProperty.GetValue(response) as decimal?;
             Assert.AreEqual(totalAmount, total);
         }
 
-
+        /// <summary>
+        /// Tests that attempting to remove a ticket from a non-existent cart returns NotFound.
+        /// </summary>
         [TestMethod]
         public async Task RemoveTicketFromCart_ShouldReturnNotFound_WhenCartDoesNotExist()
         {
             // Arrange
-            int nonExistentCartId = 999;  // Cart ID that does not exist
+            int nonExistentCartId = 999;
             int ticketId = 1;
 
             // Act
@@ -184,6 +195,9 @@ namespace MovieReviewApi.Tests
             Assert.AreEqual("Cart not found.", notFoundResult.Value);
         }
 
+        /// <summary>
+        /// Tests that attempting to remove a ticket not in the cart returns NotFound.
+        /// </summary>
         [TestMethod]
         public async Task RemoveTicketFromCart_ShouldReturnNotFound_WhenTicketNotInCart()
         {
@@ -202,12 +216,14 @@ namespace MovieReviewApi.Tests
             Assert.AreEqual("Ticket not found in cart.", notFoundResult.Value);
         }
 
-
+        /// <summary>
+        /// Tests that an existing cart can be retrieved successfully.
+        /// </summary>
         [TestMethod]
         public async Task GetCart_ShouldReturnExistingCart()
         {
             // Arrange
-            int existingCartId = 1; // Cart ID that exists from seed data
+            int existingCartId = 1;
 
             // Act
             var result = await _controller.GetCart(existingCartId);
@@ -225,48 +241,51 @@ namespace MovieReviewApi.Tests
             Assert.AreEqual(2, cart.CartItems.Count);
         }
 
+        /// <summary>
+        /// Tests that attempting to retrieve a non-existent cart returns NotFound.
+        /// </summary>
         [TestMethod]
         public async Task GetCart_ShouldReturnNotFound_WhenCartDoesNotExist()
         {
             // Arrange
-            int nonExistentCartId = 999; // Cart ID that does not exist
+            int nonExistentCartId = 999;
 
             // Act
             var result = await _controller.GetCart(nonExistentCartId);
 
             // Assert
-            Assert.IsNotNull(result);                                         // Ensure the result is not null
-            Assert.IsInstanceOfType(result.Result, typeof(NotFoundObjectResult)); // Ensure the response is NotFoundObjectResult
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result.Result, typeof(NotFoundObjectResult));
 
             var notFoundResult = result.Result as NotFoundObjectResult;
-            Assert.AreEqual("Cart not found.", notFoundResult.Value);         // Verify the returned message
+            Assert.AreEqual("Cart not found.", notFoundResult.Value);
         }
 
+        /// <summary>
+        /// Tests that a new cart can be created successfully when no cart ID is provided.
+        /// </summary>
         [TestMethod]
         public async Task GetCart_ShouldCreateNewCart_WhenNoCartIdProvided()
         {
             // Arrange
-            int initialCartCount = _context.Carts.Count(); // Get initial cart count
+            int initialCartCount = _context.Carts.Count();
 
             // Act
             var result = await _controller.GetCart();
 
             // Assert
-            Assert.IsNotNull(result);                                         // Ensure the result is not null
-            Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));   // Ensure the response is OkObjectResult
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
 
             var okResult = result.Result as OkObjectResult;
-            Assert.IsNotNull(okResult);                                       // Ensure cast was successful
+            Assert.IsNotNull(okResult);
 
-            var newCart = okResult.Value as Cart;                             // Retrieve the new cart from the response
-            Assert.IsNotNull(newCart);                                        // Ensure the new cart is not null
-            Assert.AreNotEqual(0, newCart.CartId);                           // Ensure the cart ID is assigned
+            var newCart = okResult.Value as Cart;
+            Assert.IsNotNull(newCart);
+            Assert.AreNotEqual(0, newCart.CartId);
 
-            // Verify that a new cart was added to the database
             int newCartCount = _context.Carts.Count();
-            Assert.AreEqual(initialCartCount + 1, newCartCount);             // Ensure the cart count increased by 1
+            Assert.AreEqual(initialCartCount + 1, newCartCount);
         }
-
-
     }
 }

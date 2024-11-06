@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// @author Scott Do (Reshlynt)
+// Unit tests for CartController class in MovieReviewApi.
+// @date 2024-11-5
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MovieReviewApi.Controllers;
 using MovieReviewApi.Models;
 
@@ -15,35 +17,31 @@ namespace MovieReviewApi.Tests
         [TestInitialize]
         public void Setup()
         {
-            // 1. Set up the In-Memory Database for MovieContext
+            // Set up the In-Memory Database for MovieContext
             var options = new DbContextOptionsBuilder<MovieContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid().ToString()) // Unique database for each test
+                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid().ToString())
                 .Options;
 
             _context = new MovieContext(options);
-
-            // 2. Seed the Database with Initial Data
             SeedTestData(_context);
-
-            // 3. Set up the PaymentController with the MovieContext
             _controller = new PaymentController(_context);
         }
 
-        // Helper method to seed initial data into the in-memory database
+        /// <summary>
+        /// Seeds the in-memory database with initial data for testing purposes.
+        /// </summary>
+        /// <param name="context">The in-memory movie context to be seeded with test data.</param>
         private void SeedTestData(MovieContext context)
         {
-            // Create movie data
             var movie1 = new Movie { Id = 1, MovieTitle = "Movie 1", Genre = "Action", Rating = 4 };
             var movie2 = new Movie { Id = 2, MovieTitle = "Movie 2", Genre = "Comedy", Rating = 3 };
 
-            // Create ticket data linked to movies
             var tickets = new List<Ticket>
             {
                 new Ticket { TicketId = 1, MovieId = 1, EventName = "Movie 1 Screening", Price = 15.00M, Movie = movie1 },
                 new Ticket { TicketId = 2, MovieId = 2, EventName = "Movie 2 Matinee", Price = 10.00M, Movie = movie2 }
             };
 
-            // Create cart data with some tickets
             var cart = new Cart
             {
                 CartId = 1,
@@ -54,61 +52,58 @@ namespace MovieReviewApi.Tests
                 }
             };
 
-            // Add movies, tickets, and cart to the context
             context.Movie.AddRange(movie1, movie2);
             context.Tickets.AddRange(tickets);
             context.Carts.Add(cart);
             context.SaveChanges();
         }
 
+        /// <summary>
+        /// Tests that a valid payment request returns a successful result.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ShouldReturnSuccess_WhenPaymentIsValid()
         {
             // Arrange
             var paymentRequest = new PaymentRequest
             {
-                CartId = 1, // Cart with ID 1 exists in the seeded data
-                CardNumber = "1234567812345678", // Valid card number (16 digits)
-                ExpirationDate = DateTime.Now.AddMonths(6).ToString("MM/yyyy"), // Valid expiration date in the future
-                CardholderName = "John Doe", // Valid cardholder name
-                CVC = "123" // Valid CVC (3 digits)
+                CartId = 1,
+                CardNumber = "1234567812345678",
+                ExpirationDate = DateTime.Now.AddMonths(6).ToString("MM/yyyy"),
+                CardholderName = "John Doe",
+                CVC = "123"
             };
 
             // Act
             var result = await _controller.ProcessPayment(paymentRequest);
 
             // Assert
-            // Ensure the result is not null
             Assert.IsNotNull(result);
-
-            // Verify that the result is of type OkObjectResult (indicating success)
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
 
-            // Cast the result to OkObjectResult to access its properties
             var okResult = result as OkObjectResult;
-            Assert.IsNotNull(okResult); // Ensure cast is successful
+            Assert.IsNotNull(okResult);
 
             var responseValue = okResult.Value;
-
-            // Use reflection to access the "Message" property
             var messageProperty = responseValue.GetType().GetProperty("Message");
             var message = messageProperty?.GetValue(responseValue) as string;
             Assert.AreEqual("Payment successful!", message);
 
-            // Use reflection to access the "TotalAmount" property
             var totalAmountProperty = responseValue.GetType().GetProperty("TotalAmount");
             var totalAmount = totalAmountProperty?.GetValue(responseValue) as decimal?;
             Assert.AreEqual(40.00M, totalAmount);
-
         }
 
+        /// <summary>
+        /// Tests that attempting to process payment for a non-existent cart returns a BadRequest result.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ShouldReturnBadRequest_WhenCartDoesNotExist()
         {
             // Arrange
             var paymentRequest = new PaymentRequest
             {
-                CartId = 999, // Non-existent cart ID
+                CartId = 999,
                 CardNumber = "1234567812345678",
                 ExpirationDate = DateTime.Now.AddMonths(6).ToString("MM/yyyy"),
                 CardholderName = "John Doe",
@@ -127,6 +122,9 @@ namespace MovieReviewApi.Tests
             Assert.AreEqual("Cart is empty or does not exist.", badRequestResult.Value);
         }
 
+        /// <summary>
+        /// Tests that an invalid card number returns a BadRequest result.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ShouldReturnBadRequest_WhenCardNumInvalid()
         {
@@ -151,6 +149,10 @@ namespace MovieReviewApi.Tests
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual("Invalid card number.", badRequestResult.Value);
         }
+
+        /// <summary>
+        /// Tests that an expired card returns a BadRequest result.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ShouldReturnBadRequest_WhenCardInvalid()
         {
@@ -159,7 +161,7 @@ namespace MovieReviewApi.Tests
             {
                 CartId = 1,
                 CardNumber = "1234567812345678",
-                ExpirationDate = DateTime.Now.AddMonths(-1).ToString("MM/yyyy"), // Expired date (in the past)
+                ExpirationDate = DateTime.Now.AddMonths(-1).ToString("MM/yyyy"),
                 CardholderName = "John Doe",
                 CVC = "123"
             };
@@ -175,6 +177,10 @@ namespace MovieReviewApi.Tests
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual("Invalid or expired card.", badRequestResult.Value);
         }
+
+        /// <summary>
+        /// Tests that an invalid cardholder name returns a BadRequest result.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ShouldReturnBadRequest_WhenNameInvalid()
         {
@@ -199,6 +205,10 @@ namespace MovieReviewApi.Tests
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual("Cardholder name is required.", badRequestResult.Value);
         }
+
+        /// <summary>
+        /// Tests that an invalid CVC returns a BadRequest result.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ShouldReturnBadRequest_WhenCVCInvalid()
         {

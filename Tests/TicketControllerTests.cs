@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// @author Scott Do (Reshlynt)
+// Unit tests for CartController class in MovieReviewApi.
+// @date 2024-11-5
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MovieReviewApi.Controllers;
 using MovieReviewApi.Models;
 
@@ -15,28 +17,25 @@ namespace MovieReviewApi.Tests
         [TestInitialize]
         public void Setup()
         {
-            // 1. Set up the In-Memory Database for MovieContext
+            // Set up the In-Memory Database for MovieContext
             var options = new DbContextOptionsBuilder<MovieContext>()
-                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid().ToString()) // Unique database for each test
+                .UseInMemoryDatabase(databaseName: "TestDatabase_" + System.Guid.NewGuid().ToString())
                 .Options;
 
             _context = new MovieContext(options);
-
-            // 2. Seed the Database with Initial Data
             SeedTestData(_context);
-
-            // 3. Set up the TicketController with the MovieContext
             _controller = new TicketController(_context);
         }
 
-        // Helper method to seed initial data into the in-memory database
+        /// <summary>
+        /// Seeds the in-memory database with initial data for testing purposes.
+        /// </summary>
+        /// <param name="context">The in-memory movie context to be seeded with test data.</param>
         private void SeedTestData(MovieContext context)
         {
-            // Create movie data
             var movie1 = new Movie { Id = 1, MovieTitle = "Movie 1", Genre = "Action", Rating = 4 };
             var movie2 = new Movie { Id = 2, MovieTitle = "Movie 2", Genre = "Comedy", Rating = 3 };
 
-            // Create ticket data linked to movies
             var tickets = new List<Ticket>
             {
                 new Ticket { TicketId = 1, MovieId = 1, EventName = "Movie 1 Screening", Price = 15.00M, Movie = movie1 },
@@ -44,12 +43,14 @@ namespace MovieReviewApi.Tests
                 new Ticket { TicketId = 3, MovieId = 2, EventName = "Movie 2 Matinee", Price = 10.00M, Movie = movie2 }
             };
 
-            // Add movies and tickets to the context
             context.Movie.AddRange(movie1, movie2);
             context.Tickets.AddRange(tickets);
             context.SaveChanges();
         }
 
+        /// <summary>
+        /// Tests that retrieving all tickets returns the correct list of tickets.
+        /// </summary>
         [TestMethod]
         public async Task GetTickets_ShouldReturnAllTickets()
         {
@@ -57,76 +58,66 @@ namespace MovieReviewApi.Tests
             var result = await _controller.GetTickets();
 
             // Assert
-            // Ensure the result is not null
             Assert.IsNotNull(result);
 
-            // Verify that the result is of type OkObjectResult
             var tickets = result.Value as List<Ticket>;
-            Assert.IsNotNull(tickets);      // Ensure the tickets list is not null
-            Assert.AreEqual(3, tickets.Count);  // Verify that 3 tickets were returned
+            Assert.IsNotNull(tickets);
+            Assert.AreEqual(3, tickets.Count);
 
-            // Verify details of tickets
+            // Optionally, verify details of the tickets
             Assert.AreEqual(1, tickets[0].TicketId);
             Assert.AreEqual("Movie 1 Screening", tickets[0].EventName);
             Assert.AreEqual(15.00M, tickets[0].Price);
         }
 
+        /// <summary>
+        /// Tests that retrieving tickets by movie ID returns the correct tickets for the given movie.
+        /// </summary>
         [TestMethod]
         public async Task GetTicketsByMovie_ShouldReturnTicketsForGivenMovie()
         {
             // Arrange
-            int existingMovieId = 1; // This movie ID exists in the seed data
+            int existingMovieId = 1;
 
             // Act
             var result = await _controller.GetTicketsByMovie(existingMovieId);
 
             // Assert
-            // Ensure the result is not null
             Assert.IsNotNull(result);
-
-            // Verify that the result is of type OkObjectResult
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
 
-            // Cast the result to OkObjectResult
             var okResult = result.Result as OkObjectResult;
-            Assert.IsNotNull(okResult); // Ensure the cast was successful
+            Assert.IsNotNull(okResult);
 
-            // Access the list of tickets from the result
             var tickets = okResult.Value as IEnumerable<Ticket>;
-            Assert.IsNotNull(tickets); // Ensure the returned value is not null
-
-            // Verify that the correct number of tickets are returned (2 tickets linked to movie ID 1)
+            Assert.IsNotNull(tickets);
             Assert.AreEqual(2, tickets.Count());
 
-            // Optionally verify the details of the tickets
             var ticketList = tickets.ToList();
             Assert.AreEqual(1, ticketList[0].TicketId);
             Assert.AreEqual("Movie 1 Screening", ticketList[0].EventName);
             Assert.AreEqual(15.00M, ticketList[0].Price);
         }
 
+        /// <summary>
+        /// Tests that attempting to retrieve tickets by a non-existent movie ID returns a NotFound result.
+        /// </summary>
         [TestMethod]
         public async Task GetTicketsByMovie_ShouldReturnNotFound_WhenNoTicketsExistForGivenMovie()
         {
             // Arrange
-            int nonExistentMovieId = 999; // This movie ID does not exist in the seed data
+            int nonExistentMovieId = 999;
 
             // Act
             var result = await _controller.GetTicketsByMovie(nonExistentMovieId);
 
             // Assert
-            // Ensure the result is not null
             Assert.IsNotNull(result);
-
-            // Verify that the result is of type NotFoundResult
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundObjectResult));
 
-            // Cast the result to NotFoundObjectResult to check the message
             var notFoundResult = result.Result as NotFoundObjectResult;
             Assert.IsNotNull(notFoundResult);
             Assert.AreEqual($"No tickets available for movie with ID {nonExistentMovieId}.", notFoundResult.Value);
         }
-
-
     }
 }
