@@ -23,20 +23,21 @@ namespace MovieReviewApi.Controllers
         }
 
         [HttpGet("ByMovie/{movieId}")]
-public async Task<ActionResult<IEnumerable<Ticket>>> GetTicketsByMovie(int movieId)
-{
-    var tickets = await _context.Tickets
-                                .Where(t => t.MovieId == movieId)
-                                .Include(t => t.Movie)
-                                .ToListAsync();
+        public async Task<ActionResult<IEnumerable<Ticket>>> GetTicketsByMovie(int movieId)
+        {
+            var tickets = await _context.Tickets
+                                        .Where(t => t.MovieId == movieId)
+                                        .Include(t => t.Movie)
+                                        .ToListAsync();
 
-    if (!tickets.Any())
-    {
-        return NotFound($"No tickets available for movie with ID {movieId}.");
-    }
+            if (!tickets.Any())
+            {
+                return NotFound($"No tickets available for movie with ID {movieId}.");
+            }
 
-    return Ok(tickets);
-}
+            return Ok(tickets);
+        }
+
     }
 }
 

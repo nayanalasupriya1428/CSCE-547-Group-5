@@ -3,9 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MovieReviewApi.Controllers;
 using MovieReviewApi.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace MovieReviewApi.Tests
 {
