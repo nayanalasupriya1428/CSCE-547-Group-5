@@ -1,11 +1,68 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+﻿# ASP.NET Core-specific
+bin/
+obj/
 
-/.vs
-/bin
-/obj
-/MovieReview-UnitTest/obj
-/MovieReviewApi.Tests/obj
-/Tests/bin/Debug/net8.0
-/Tests/obj
+# Visual Studio-specific
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.swp
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Logs and Reports
+*.log
+*.tlog
+
+# Local Configurations
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json (if specific configurations per environment)
+
+# Temp Files
+*.tmp
+*.cache
+*.pdb
+*.mdb
+
+# IIS and Web Config
+.vscode-server/
+*.pubxml
+*.publish.xml
+*.cache
+*.dbmdl
+*.pyc
+*.pycodestyle
+
+# Frontend: Node.js, npm/Yarn-related
+node_modules/
+dist/
+build/
+yarn.lock
+package-lock.json (if you use Yarn, otherwise include npm lock)
+
+# React-Specific Files
+.DS_Store
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# OS-specific
+Thumbs.db
+.DS_Store
+desktop.ini
+.idea/
+*.iml
+
+# Deployment Files
+*.deploy
+*.publish
