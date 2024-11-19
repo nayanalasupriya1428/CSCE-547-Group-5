@@ -1,7 +1,5 @@
 using CineBuzzApi.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CineBuzzApi.Data
 {
@@ -33,7 +31,7 @@ namespace CineBuzzApi.Data
                 this.SaveChanges();
             }
 
-        
+
             // Seed mock data for MovieTime if none exist
             if (MovieTimes != null && !MovieTimes.Any())
             {
@@ -91,90 +89,90 @@ namespace CineBuzzApi.Data
                 );
 
                 this.SaveChanges();
-         
+
             }
-            
-        
-        
 
-if (PaymentRequests != null && !PaymentRequests.Any())
-{
-    PaymentRequests.AddRange(
-        new PaymentRequest
-        {
-            PaymentRequestId = 1,
-            CartId = 1,
-            CardNumber = "4111111111111111",
-            ExpirationDate = "12/25",
-            CardholderName = "John Doe",
-            CVC = "123"
-        },
-        new PaymentRequest
-        {
-            PaymentRequestId = 2,
-            CartId = 2,
-            CardNumber = "5555555555554444",
-            ExpirationDate = "11/24",
-            CardholderName = "Jane Smith",
-            CVC = "456"
+
+
+
+            if (PaymentRequests != null && !PaymentRequests.Any())
+            {
+                PaymentRequests.AddRange(
+                    new PaymentRequest
+                    {
+                        PaymentRequestId = 1,
+                        CartId = 1,
+                        CardNumber = "4111111111111111",
+                        ExpirationDate = "12/25",
+                        CardholderName = "John Doe",
+                        CVC = "123"
+                    },
+                    new PaymentRequest
+                    {
+                        PaymentRequestId = 2,
+                        CartId = 2,
+                        CardNumber = "5555555555554444",
+                        ExpirationDate = "11/24",
+                        CardholderName = "Jane Smith",
+                        CVC = "456"
+                    }
+                );
+
+                this.SaveChanges();
+            }
+
+
+            // Add mock data for carts and cart items
+            if (Carts != null && !Carts.Any())
+            {
+                var cart1 = new Cart
+                {
+                    CartId = 1,
+                    UserId = 1,
+                    Total = 100.0
+                };
+
+                var cartItem1 = new CartItem
+                {
+                    CartItemId = 1,
+                    CartId = 1,
+                    TicketId = 1,
+                    Quantity = 2,
+                };
+
+                cart1.Items.Add(cartItem1);
+                Carts.Add(cart1);
+                this.SaveChanges();
+            }
         }
-    );
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<User>().HasData(
+                new { Id = 1, Email = "john.doe@example.com", Username = "Johndoe", FirstName = "John", LastName = "Doe", Password = "12345678" },
+                new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
+            );
 
-    this.SaveChanges();
-}
+            // Assume NotificationPreferencesId is a foreign key in User for linking
+            modelBuilder.Entity<NotificationPreferences>().HasData(
+                new { Id = 1, UserId = 1, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Daily },
+                new { Id = 2, UserId = 2, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Weekly }
+            );
 
+            // If using NotificationTypes as a linked entity, you'll need to seed this data separately and handle it appropriately.
 
-// Add mock data for carts and cart items
-if (Carts != null && !Carts.Any())
-{
-    var cart1 = new Cart
-    {
-        CartId = 1,
-        UserId = 1,
-        Total = 100.0
-    };
-
-    var cartItem1 = new CartItem
-    {
-        CartItemId = 1,
-        CartId = 1,
-        TicketId = 1,
-        Quantity = 2,
-    };
-
-    cart1.Items.Add(cartItem1);
-    Carts.Add(cart1);
-    this.SaveChanges();
-}
+            base.OnModelCreating(modelBuilder);
         }
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<User>().HasData(
-            new { Id = 1, Email = "john.doe@example.com", Username = "Johndoe", FirstName = "John", LastName = "Doe", Password = "12345678" },
-            new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
-        );
 
-        // Assume NotificationPreferencesId is a foreign key in User for linking
-        modelBuilder.Entity<NotificationPreferences>().HasData(
-            new { Id = 1, UserId = 1, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Daily },
-            new { Id = 2, UserId = 2, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Weekly }
-        );
 
-        // If using NotificationTypes as a linked entity, you'll need to seed this data separately and handle it appropriately.
-
-        base.OnModelCreating(modelBuilder);
-    }
-
-        
 
         public DbSet<Movie> Movies { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<MovieTime> MovieTimes { get; set; } // Add DbSet for MovieTime
         public DbSet<Ticket> Tickets { get; set; }
-         public DbSet<PaymentRequest> PaymentRequests { get; set; }
-         public DbSet<Cart> Carts { get; set; }
-         public DbSet<CartItem> CartItems { get; set; }
-         public DbSet<NotificationPreferences> NotificationPreferences { get; set; }
+        public DbSet<PaymentRequest> PaymentRequests { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<NotificationPreferences> NotificationPreferences { get; set; }
 
 
 
