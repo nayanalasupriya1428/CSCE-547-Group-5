@@ -24,42 +24,107 @@ namespace CineBuzzAPI.Controllers
                 return BadRequest("Review cannot be null");
             }
 
-            var result = await _reviewService.AddReview(movieId, review);
-            return CreatedAtAction(nameof(GetReviews), new { movieId }, result);
+            // Validation logic
+            if (string.IsNullOrEmpty(review.Content) || review.ReviewScore < 1 || review.ReviewScore > 5)
+            {
+                return BadRequest("Invalid review data.");
+            }
+
+            try
+            {
+                var result = await _reviewService.AddReview(movieId, review);
+                return CreatedAtAction(nameof(GetReviews), new { movieId }, result);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (ex) here if needed
+                _logger.LogError(ex, "An error occurred while adding the review.");
+                return StatusCode(500, "An error occurred while adding the review.");
+            }
         }
 
         // GET: Get all reviews for a movie
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Review>>> GetReviews(int movieId)
         {
-            var reviews = await _reviewService.GetReviews(movieId);
-            return Ok(reviews);
+            if (movieId <= 0)
+            {
+                return BadRequest("Invalid movie ID.");
+            }
+
+            try
+            {
+                var reviews = await _reviewService.GetReviews(movieId);
+                if (reviews == null || !reviews.Any())
+                {
+                    return NotFound("No reviews found for the specified movie.");
+                }
+                return Ok(reviews);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving the reviews.");
+                return StatusCode(500, "An error occurred while retrieving the reviews.");
+            }
         }
 
         // PUT: Edit a specific review
         [HttpPut("{reviewId}")]
         public async Task<ActionResult<Review>> EditReview(int movieId, int reviewId, [FromBody] Review newReview)
         {
-            var updatedReview = await _reviewService.EditReview(movieId, reviewId, newReview);
-            if (updatedReview == null)
+            // Validation logic
+            if (newReview == null)
             {
-                return NotFound("Review not found");
+                return BadRequest("Review cannot be null");
             }
 
-            return Ok(updatedReview);
+            if (string.IsNullOrEmpty(newReview.Content) || newReview.ReviewScore < 1 || newReview.ReviewScore > 5)
+            {
+                return BadRequest("Invalid review data.");
+            }
+
+            try
+            {
+                var updatedReview = await _reviewService.EditReview(movieId, reviewId, newReview);
+
+                if (updatedReview == null)
+                {
+                    return NotFound("Review not found");
+                }
+
+                return Ok(updatedReview);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while editing the review.");
+                return StatusCode(500, "An error occurred while editing the review.");
+            }
         }
 
         // DELETE: Delete a specific review
         [HttpDelete("{reviewId}")]
         public async Task<IActionResult> DeleteReview(int movieId, int reviewId)
         {
-            var result = await _reviewService.DeleteReview(movieId, reviewId) as StatusCodeResult;
-            if (result == null || result.StatusCode != 204)
+            if (movieId <= 0 || reviewId <= 0)
             {
-                return NotFound("Review not found");
+                return BadRequest("Invalid movie ID or review ID.");
             }
 
-            return NoContent();
+            try
+            {
+                var result = await _reviewService.DeleteReview(movieId, reviewId);
+                if (result == null)
+                {
+                    return NotFound("Review not found");
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while deleting the review.");
+                return StatusCode(500, "An error occurred while deleting the review.");
+            }
         }
     }
 
