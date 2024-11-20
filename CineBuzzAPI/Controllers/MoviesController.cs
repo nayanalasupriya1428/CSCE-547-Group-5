@@ -39,5 +39,14 @@ namespace CineBuzzApi.Controllers
 
             return Ok(new { Message = "Movie removed successfully" });
         }
+
+        [HttpPut("UpdateMovie/{movieId}")]
+        public async Task<ActionResult<Movie>> EditMovie(int movieId, [FromBody] Movie movie)
+        {
+            var updatedMovie = await _movieService.EditMovieAsync(movieId, movie);
+            if (updatedMovie == null) return NotFound(new { Message = "Movie not found" });
+
+            return Ok(updatedMovie);
+        }
     }
 }

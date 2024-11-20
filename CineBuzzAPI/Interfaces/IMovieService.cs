@@ -11,7 +11,7 @@ namespace CineBuzzApi.Services
         Task<bool> RemoveMovieAsync(int movieId);
 
         // put action, edit any movie from the database. arguments are the old movie id, and the New Movie object
-        //Task<Movie> EditMovieAsync(int movieId, Movie newMovie);
+        Task<Movie?> EditMovieAsync(int movieId, Movie newMovie);
     }
 }
 

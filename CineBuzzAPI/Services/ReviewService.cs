@@ -1,35 +1,82 @@
-using CineBuzzAPI.Interfaces;
+using CineBuzzApi.Data;
 using CineBuzzApi.Models;
+using CineBuzzAPI.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace CineBuzzAPI.Services
 {
     public class ReviewService : IReviewService
     {
-        public Task<ActionResult<Review>> AddReviewAsync(int movieId, [FromBody] Review review)
+        private readonly CineBuzzDbContext _context;
+
+        public ReviewService(CineBuzzDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<Review> AddReviewAsync(int movieId, [FromBody] Review review)
+        {
+            // Check if the input is valid. If not, do not continue with the rest of the code.
+            if (movieId < 0)
+            {
+                throw new System.ArgumentException("Invalid movie ID.");
+            }
+
+            else if (review == null || review.Content == null)
+            {
+                throw new System.ArgumentException("Review cannot be null.");
+            }
+            else if (review.ReviewScore < 1 || review.ReviewScore > 5)
+            {
+                throw new System.ArgumentException("Invalid review score.");
+            }
+
+            // Check if the movie exists in the database.
+            var movie = await _context.Movies.FindAsync(movieId);
+            if (movie == null)
+            {
+                throw new System.ArgumentException("Movie not found.");
+            }
+
+            // Apply business logic
+            review.ReviewDate = System.DateTime.Now;
+            review.MovieId = movieId;
+
+            // add review
+            try
+            {
+                _context.Add(review);
+                // add movie to review
+                await _context.SaveChangesAsync();
+                return review;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public Task<bool> DeleteReviewAsync(int movieId, int reviewId)
         {
             // Implementation will be added later
             throw new System.NotImplementedException();
         }
 
-        public Task<IActionResult> DeleteReviewAsync(int movieId, int reviewId)
+        public Task<Review?> EditReviewAsync(int movieId, int reviewId, [FromBody] Review newReview)
         {
             // Implementation will be added later
             throw new System.NotImplementedException();
         }
 
-        public Task<ActionResult<Review>> EditReviewAsync(int movieId, int reviewId, [FromBody] Review newReview)
+        public async Task<IEnumerable<Review>> GetReviewsAsync(int movieId)
         {
-            // Implementation will be added later
-            throw new System.NotImplementedException();
+            return await _context.Reviews.Where(r => r.MovieId == movieId).ToListAsync();
         }
 
-        public Task<ActionResult<IEnumerable<Review>>> GetReviewsAsync(int movieId)
+        Task<IEnumerable<Movie>> IReviewService.GetReviewsAsync(int movieId)
         {
-            // Implementation will be added later
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

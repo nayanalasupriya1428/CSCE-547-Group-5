@@ -36,5 +36,23 @@ namespace CineBuzzApi.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<Movie?> EditMovieAsync(int movieId, Movie newMovie)
+        {
+            var movie = await _context.Movies.FindAsync(movieId);
+            if (movie == null) 
+                return null;
+            // replace old movie content with new movie content
+            movie.Title = newMovie.Title;
+            movie.Description = newMovie.Description;
+            for (int i = 0; i < movie.Genres.Count; i++)
+            {
+                movie.Genres[i] = newMovie.Genres[i];
+            }
+            // apply changes
+            await _context.SaveChangesAsync();
+            return movie;
+
+        }
     }
 }

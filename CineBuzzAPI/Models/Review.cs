@@ -17,17 +17,17 @@ namespace CineBuzzApi.Models
         /// <summary>
         /// Identifier for the review.
         /// </summary>
-        public int ReviewID { get; set; }
+        public int ReviewId { get; set; }
 
         /// <summary>
         /// ID of the movie being reviewed.
         /// </summary>
-        public int MovieID { get; set; }
+        public int MovieId { get; set; }
 
         /// <summary>
         /// ID of the user who wrote the review.
         /// </summary>
-        public int UserID { get; set; }
+        public int UserId { get; set; }
 
         /// <summary>
         /// The content of the review.
