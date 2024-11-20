@@ -45,10 +45,13 @@ namespace CineBuzzApi.Services
             // replace old movie content with new movie content
             movie.Title = newMovie.Title;
             movie.Description = newMovie.Description;
-            for (int i = 0; i < movie.Genres.Count; i++)
+
+            movie.Genres.Clear();
+            foreach (var genre in newMovie.Genres)
             {
-                movie.Genres[i] = newMovie.Genres[i];
+                movie.Genres.Add(genre);
             }
+
             // apply changes
             await _context.SaveChangesAsync();
             return movie;

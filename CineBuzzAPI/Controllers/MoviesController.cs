@@ -31,18 +31,24 @@ namespace CineBuzzApi.Controllers
             return CreatedAtAction(nameof(GetMovies), new { id = createdMovie.MovieId }, createdMovie);
         }
 
-        [HttpDelete("RemoveMovie/{movieId}")]
+        [HttpDelete("{movieId}")]
         public async Task<IActionResult> RemoveMovie(int movieId)
         {
             var success = await _movieService.RemoveMovieAsync(movieId);
             if (!success) return NotFound(new { Message = "Movie not found" });
 
-            return Ok(new { Message = "Movie removed successfully" });
+            return NoContent();
         }
 
-        [HttpPut("UpdateMovie/{movieId}")]
+
+        [HttpPut("{movieId}")]
         public async Task<ActionResult<Movie>> EditMovie(int movieId, [FromBody] Movie movie)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var updatedMovie = await _movieService.EditMovieAsync(movieId, movie);
             if (updatedMovie == null) return NotFound(new { Message = "Movie not found" });
 
