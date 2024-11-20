@@ -1,7 +1,8 @@
 ﻿using CineBuzzApi.Models;
+using CineBuzzApi.Services;
 using CineBuzzAPI.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace CineBuzzAPI.Controllers
 {
@@ -10,10 +11,13 @@ namespace CineBuzzAPI.Controllers
     public class ReviewController : ControllerBase
     {
         private readonly IReviewService _reviewService;
+        private readonly ILogger<ReviewController> _logger;
+        private readonly IMovieService _movieService;
 
-        public ReviewController(IReviewService reviewService)
+        public ReviewController(IReviewService reviewService, ILogger<ReviewController> logger)
         {
             _reviewService = reviewService;
+            _logger = logger;
         }
 
         // POST: Add a review
@@ -55,7 +59,7 @@ namespace CineBuzzAPI.Controllers
             try
             {
                 var reviews = await _reviewService.GetReviewsAsync(movieId);
-                if (reviews == null ) // || !reviews.Any()
+                if (reviews == null || reviews.Value == null || !reviews.Value.Any())
                 {
                     return NotFound("No reviews found for the specified movie.");
                 }
@@ -84,17 +88,24 @@ namespace CineBuzzAPI.Controllers
 
             try
             {
+                // Perform the update
                 var updatedReview = await _reviewService.EditReviewAsync(movieId, reviewId, newReview);
 
                 if (updatedReview == null)
                 {
-                    return NotFound("Review not found");
+                    return NotFound("Review not found.");
                 }
 
                 return Ok(updatedReview);
             }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while editing review {reviewId} for movie {movieId}.", reviewId, movieId);
+                return StatusCode(503, "Database is currently unavailable.");
+            }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while editing review {reviewId} for movie {movieId}.", reviewId, movieId);
                 return StatusCode(500, "An error occurred while editing the review.");
             }
         }
@@ -118,8 +129,14 @@ namespace CineBuzzAPI.Controllers
 
                 return NoContent();
             }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while deleting review {reviewId} for movie {movieId}.", reviewId, movieId);
+                return StatusCode(503, "Database is currently unavailable.");
+            }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while deleting review {reviewId} for movie {movieId}.", reviewId, movieId);
                 return StatusCode(500, "An error occurred while deleting the review.");
             }
         }

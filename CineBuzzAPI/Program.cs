@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using CineBuzzApi.Services;
 using CineBuzzApi.Models;
 using CineBuzzApi.Data;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,11 @@ builder.Services.AddDbContext<CineBuzzDbContext>(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configure logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
 
 var app = builder.Build();
 
