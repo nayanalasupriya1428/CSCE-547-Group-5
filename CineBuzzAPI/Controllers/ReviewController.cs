@@ -1,6 +1,7 @@
 ﻿using CineBuzzApi.Models;
 using CineBuzzAPI.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace CineBuzzAPI.Controllers
 {
@@ -32,13 +33,12 @@ namespace CineBuzzAPI.Controllers
 
             try
             {
-                var result = await _reviewService.AddReview(movieId, review);
+                var result = await _reviewService.AddReviewAsync(movieId, review);
                 return CreatedAtAction(nameof(GetReviews), new { movieId }, result);
             }
             catch (Exception ex)
             {
-                // Log the exception (ex) here if needed
-                _logger.LogError(ex, "An error occurred while adding the review.");
+
                 return StatusCode(500, "An error occurred while adding the review.");
             }
         }
@@ -54,8 +54,8 @@ namespace CineBuzzAPI.Controllers
 
             try
             {
-                var reviews = await _reviewService.GetReviews(movieId);
-                if (reviews == null || !reviews.Any())
+                var reviews = await _reviewService.GetReviewsAsync(movieId);
+                if (reviews == null ) // || !reviews.Any()
                 {
                     return NotFound("No reviews found for the specified movie.");
                 }
@@ -63,7 +63,6 @@ namespace CineBuzzAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while retrieving the reviews.");
                 return StatusCode(500, "An error occurred while retrieving the reviews.");
             }
         }
@@ -85,7 +84,7 @@ namespace CineBuzzAPI.Controllers
 
             try
             {
-                var updatedReview = await _reviewService.EditReview(movieId, reviewId, newReview);
+                var updatedReview = await _reviewService.EditReviewAsync(movieId, reviewId, newReview);
 
                 if (updatedReview == null)
                 {
@@ -96,7 +95,6 @@ namespace CineBuzzAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while editing the review.");
                 return StatusCode(500, "An error occurred while editing the review.");
             }
         }
@@ -112,7 +110,7 @@ namespace CineBuzzAPI.Controllers
 
             try
             {
-                var result = await _reviewService.DeleteReview(movieId, reviewId);
+                var result = await _reviewService.DeleteReviewAsync(movieId, reviewId);
                 if (result == null)
                 {
                     return NotFound("Review not found");
@@ -122,7 +120,6 @@ namespace CineBuzzAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while deleting the review.");
                 return StatusCode(500, "An error occurred while deleting the review.");
             }
         }
