@@ -1,5 +1,7 @@
 using CineBuzzApi.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CineBuzzApi.Data
 {
@@ -152,14 +154,6 @@ namespace CineBuzzApi.Data
                 new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
             );
 
-            // Assume NotificationPreferencesId is a foreign key in User for linking
-            modelBuilder.Entity<NotificationPreferences>().HasData(
-                new { Id = 1, UserId = 1, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Daily },
-                new { Id = 2, UserId = 2, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Weekly }
-            );
-
-            // If using NotificationTypes as a linked entity, you'll need to seed this data separately and handle it appropriately.
-
             base.OnModelCreating(modelBuilder);
         }
 
@@ -172,8 +166,8 @@ namespace CineBuzzApi.Data
         public DbSet<PaymentRequest> PaymentRequests { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
-        public DbSet<NotificationPreferences> NotificationPreferences { get; set; }
         public DbSet<Review> Reviews { get; set; }
+
 
 
 

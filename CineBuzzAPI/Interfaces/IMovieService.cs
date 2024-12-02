@@ -4,14 +4,17 @@ using System.Threading.Tasks;
 
 namespace CineBuzzApi.Services
 {
+    // Interface for managing movie-related operations.
     public interface IMovieService
     {
+        // Retrieves a list of all movies from the database asynchronously.
         Task<IEnumerable<Movie>> GetAllMoviesAsync();
-        Task<Movie> AddMovieAsync(Movie movie);
-        Task<bool> RemoveMovieAsync(int movieId);
 
-        // put action, edit any movie from the database. arguments are the old movie id, and the New Movie object
-        Task<Movie?> EditMovieAsync(int movieId, Movie newMovie);
+        // Adds a new movie to the database and returns the added movie asynchronously.
+        Task<Movie> AddMovieAsync(Movie movie);
+
+        // Removes a movie from the database based on the movie ID. Returns true if the removal was successful.
+        Task<bool> RemoveMovieAsync(int movieId);
     }
 }
 

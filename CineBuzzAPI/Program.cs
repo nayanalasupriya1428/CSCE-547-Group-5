@@ -6,13 +6,15 @@ using CineBuzzApi.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Register services
-builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
+
 builder.Services.AddScoped<IRecentlyViewedMoviesService, RecentlyViewedMoviesService>(); // Register with interface
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IPaymentRequestService, PaymentRequestService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
@@ -23,7 +25,6 @@ builder.Services.AddDbContext<CineBuzzDbContext>(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
 
 var app = builder.Build();
 
