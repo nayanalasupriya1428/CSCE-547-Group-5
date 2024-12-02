@@ -16,7 +16,7 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpGet("{movieId}")]
-    public async Task<ActionResult<IEnumerable<Review>>> GetReviews(int movieId)
+    public async Task<ActionResult<IEnumerable<Review>>> GetReviewsByMovieId(int movieId)
     {
         var reviews = await _reviewService.GetReviewsByMovieIdAsync(movieId);
         return Ok(reviews);

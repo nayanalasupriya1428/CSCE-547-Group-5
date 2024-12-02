@@ -44,5 +44,34 @@ namespace CineBuzzApi.Services
             await _context.SaveChangesAsync();  // Save changes to the database.
             return true;  // Return true to indicate successful removal.
         }
+
+        public async Task<bool> EditMovieAsync(int movieId, Movie movie)
+        {
+            var oldMovie = await _context.Movies.FindAsync(movieId);
+            if (oldMovie == null) return false;
+
+            // Update the properties of the existing movie with new values.
+            oldMovie.Title = movie.Title;
+            oldMovie.Description = movie.Description;
+
+            // Movie has a list of genres. We need to update the genres, but how?
+            // There are cases that can arise from this operation.
+            // 1. The new Movie is adding genres that the old Movie did not have.
+            // 2. The new Movie is replacing the genres of the old Movie.
+            // For now, I will assume that the new Movie is replacing the genres of the old Movie.
+
+            // Remove all genres from the old movie.
+            oldMovie.Genres.Clear();
+
+            // Add all genres from the new movie.
+            foreach (var genre in movie.Genres)
+            {
+                oldMovie.Genres.Add(genre);
+            }
+
+            return await _context.SaveChangesAsync() > 0;
+
+
+        }
     }
 }

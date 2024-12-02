@@ -1,10 +1,3 @@
-/*
- * Copyright 2024 USC - Columbia
- * @author Scott Do
- * @date 11/18/2024
- *  Review model.
- */
-
 using System.ComponentModel.DataAnnotations;
 
 namespace CineBuzzApi.Models

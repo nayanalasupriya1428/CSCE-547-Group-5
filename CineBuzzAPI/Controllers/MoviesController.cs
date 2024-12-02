@@ -45,5 +45,15 @@ namespace CineBuzzApi.Controllers
 
             return Ok(new { Message = "Movie removed successfully" }); // If successful, return HTTP 200 with a confirmation message.
         }
+
+        // HTTP Put method to edit movie.
+        [HttpPut("EditMovie/{movieId}")]
+        public async Task<IActionResult> EditMovie(int movieId, [FromBody] Movie movie)
+        {
+            var success = await _movieService.EditMovieAsync(movieId, movie); // Attempt to edit the movie.
+            if (!success) return NotFound(new { Message = "Movie not found" }); // If not successful, return HTTP 404 with a message.
+
+            return Ok(new { Message = "Movie updated successfully" }); // If successful, return HTTP 200 with a confirmation message.
+        }
     }
 }
