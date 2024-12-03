@@ -22,5 +22,13 @@ namespace CineBuzzApi.Models
         {
             Genres = new List<string>();
         }
+        public override bool Equals(object obj)
+        {
+            if (obj is Movie other)
+            {
+                return MovieId == other.MovieId;
+            }
+            return false;
+        }
     }
 }

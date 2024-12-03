@@ -68,6 +68,7 @@ namespace CineBuzzApi.Services
             {
                 // If it exists, just increase the quantity
                 cartItem.Quantity += quantity;
+                cart.Total += ticket.Price * quantity;
             }
 
             await _context.SaveChangesAsync();  // Save changes to the database

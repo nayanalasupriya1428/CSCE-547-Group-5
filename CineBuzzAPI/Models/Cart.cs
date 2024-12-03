@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace CineBuzzApi.Models
 {
 
@@ -38,9 +36,4 @@ namespace CineBuzzApi.Models
 
         public Cart() { }
     }
-
-
-
-
-
 }
