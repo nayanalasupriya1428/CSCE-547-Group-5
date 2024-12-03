@@ -8,5 +8,7 @@ namespace CineBuzzApi.Models
         public int UserId { get; set; }
         public int MovieId { get; set; }
         public string Content { get; set; } = string.Empty; // Review content
+
+        // Do a number system for stars
     }
 }
