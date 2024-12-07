@@ -56,8 +56,16 @@ namespace CineBuzzApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _userService.DeleteUserAsync(id);
-            return NoContent();
+            try
+            {
+                await _userService.DeleteUserAsync(id); // Attempt to delete the user
+                return NoContent(); // Return HTTP 204 if successful
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(); // Return HTTP 404 if the user ID is not found
+            }
         }
+
     }
 }

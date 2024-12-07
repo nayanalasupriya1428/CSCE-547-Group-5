@@ -34,5 +34,6 @@ namespace CineBuzzApi.Controllers
             var recentlyViewedMovies = _recentlyViewedMoviesService.GetRecentlyViewedMovies(); // Get the list from the service.
             return Ok(recentlyViewedMovies); // Return the list of movies.
         }
+
     }
 }

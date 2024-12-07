@@ -56,12 +56,19 @@ namespace CineBuzzApi.Controllers
             return Ok(updatedTicket); // If updated successfully, return the updated ticket.
         }
 
-        // Deletes a ticket by ID.
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _ticketService.DeleteTicketAsync(id); // Delete the ticket.
-            return NoContent(); // Return an HTTP 204 No Content status to indicate successful deletion.
+            try
+            {
+                await _ticketService.DeleteTicketAsync(id); // Attempt to delete the ticket
+                return NoContent(); // Return HTTP 204 if successful
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(); // Return HTTP 404 if the ticket ID is not found
+            }
         }
+
     }
 }
