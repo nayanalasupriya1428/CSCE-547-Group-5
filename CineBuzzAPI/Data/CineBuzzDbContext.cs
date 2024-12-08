@@ -154,6 +154,54 @@ namespace CineBuzzApi.Data
                 new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
             );
 
+        // Assume NotificationPreferencesId is a foreign key in User for linking
+        //modelBuilder.Entity<NotificationPreferences>().HasData(
+        //    new { Id = 1, UserId = 1, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Daily },
+        //    new { Id = 2, UserId = 2, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Weekly }
+        //);
+
+        // If using NotificationTypes as a linked entity, you'll need to seed this data separately and handle it appropriately.
+        // User - Cart (1-to-1)
+        // modelBuilder.Entity<Cart>()
+        //     .HasOne(c => c.User)
+        //     .HasForeignKey<Cart>(c => c.UserId)
+        //     .OnDelete(DeleteBehavior.Cascade);
+
+        // Movie - MovieTime (1-to-Many)
+        // modelBuilder.Entity<MovieTime>()
+        //     .HasOne(mt => mt.Movie)
+        //     .WithMany(m => m.MovieTimes) // Navigation property from Movie
+        //     .HasForeignKey(mt => mt.MovieId)
+        //     .OnDelete(DeleteBehavior.Cascade);
+
+        // MovieTime - Ticket (1-to-Many)
+        modelBuilder.Entity<Ticket>()
+            .HasOne(t => t.MovieTime)
+            .WithMany(mt => mt.Tickets) // Navigation property from MovieTime
+            .HasForeignKey(t => t.MovieTimeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Cart - CartItem (1-to-Many)
+        modelBuilder.Entity<CartItem>()
+            .HasOne(ci => ci.Cart)
+            .WithMany(c => c.Items) // Navigation property from Cart
+            .HasForeignKey(ci => ci.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // CartItem - Ticket (Many-to-1)
+        modelBuilder.Entity<CartItem>()
+            .HasOne(ci => ci.Ticket)
+            .WithMany() // Ticket does not have a navigation property for CartItems
+            .HasForeignKey(ci => ci.TicketId)
+            .OnDelete(DeleteBehavior.Restrict); // Prevent ticket deletion if in use
+
+        // Cart - PaymentRequest (1-to-1)
+        modelBuilder.Entity<PaymentRequest>()
+            .HasOne<Cart>()
+            .WithOne()
+            .HasForeignKey<PaymentRequest>(pr => pr.CartId)
+            .OnDelete(DeleteBehavior.Cascade);
+
             base.OnModelCreating(modelBuilder);
         }
 
