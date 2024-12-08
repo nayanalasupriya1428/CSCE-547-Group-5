@@ -8,6 +8,7 @@ namespace CineBuzzApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    // Manages actions related to user accounts, such as displaying user profiles, editing profiles, and other user-related data management.
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
@@ -17,11 +18,15 @@ namespace CineBuzzApi.Controllers
             _userService = userService;
         }
 
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> Get()
         {
             return Ok(await _userService.GetAllUsersAsync());
         }
+        // Gets the user details by user ID.
+        // param userId: The ID of the user to retrieve.
+        // return: Returns a view displaying user details.
 
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> Get(int id)
@@ -51,8 +56,16 @@ namespace CineBuzzApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await _userService.DeleteUserAsync(id);
-            return NoContent();
+            try
+            {
+                await _userService.DeleteUserAsync(id); // Attempt to delete the user
+                return NoContent(); // Return HTTP 204 if successful
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(); // Return HTTP 404 if the user ID is not found
+            }
         }
+
     }
 }

@@ -59,5 +59,6 @@ namespace CineBuzzApi.Controllers
 
             return Ok(new { Message = "Payment processed successfully" });
         }
+
     }
 }
