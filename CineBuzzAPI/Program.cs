@@ -7,7 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register services
 
-builder.Services.AddScoped<IRecentlyViewedMoviesService, RecentlyViewedMoviesService>(); // Register with interface
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
