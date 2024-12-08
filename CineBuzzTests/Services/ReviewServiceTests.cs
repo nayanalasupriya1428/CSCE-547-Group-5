@@ -16,17 +16,23 @@ namespace CineBuzzApi.Services
         private ReviewService _service;
         private CineBuzzDbContext _context;
 
+        /// <summary>
+        /// Sets up an in-memory database and initializes the ReviewService for testing.
+        /// </summary>
         [TestInitialize]
         public void Setup()
         {
             var options = new DbContextOptionsBuilder<CineBuzzDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique database per test
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
             _context = new CineBuzzDbContext(options);
             _service = new ReviewService(_context);
         }
 
+        /// <summary>
+        /// Cleans up the in-memory database after each test.
+        /// </summary>
         [TestCleanup]
         public void Cleanup()
         {
@@ -34,10 +40,12 @@ namespace CineBuzzApi.Services
             _context.Dispose();
         }
 
+        /// <summary>
+        /// Tests that GetReviewsByMovieIdAsync returns only reviews associated with a specific movie ID.
+        /// </summary>
         [TestMethod]
         public async Task GetReviewsByMovieIdAsync_ReturnsReviews_WhenReviewsExist()
         {
-            // Arrange
             var reviews = new List<Review>
             {
                 new Review { ReviewId = 1, MovieId = 1, UserId = 1, Content = "Great movie!" },
@@ -47,18 +55,18 @@ namespace CineBuzzApi.Services
             _context.Reviews.AddRange(reviews);
             await _context.SaveChangesAsync();
 
-            // Act
             var result = await _service.GetReviewsByMovieIdAsync(1);
 
-            // Assert
             Assert.IsNotNull(result);
-            Assert.AreEqual(2, result.Count()); // Should return 2 reviews for MovieId 1
+            Assert.AreEqual(2, result.Count());
         }
 
+        /// <summary>
+        /// Tests that AddReviewAsync successfully adds a valid review.
+        /// </summary>
         [TestMethod]
         public async Task AddReviewAsync_AddsReviewSuccessfully_WhenReviewIsValid()
         {
-            // Arrange
             var newReview = new Review
             {
                 ReviewId = 4,
@@ -67,18 +75,18 @@ namespace CineBuzzApi.Services
                 Content = "Loved it!"
             };
 
-            // Act
             var result = await _service.AddReviewAsync(newReview);
 
-            // Assert
-            Assert.IsTrue(result); // Verify the addition was successful
-            Assert.AreEqual(1, await _context.Reviews.CountAsync(r => r.ReviewId == 4)); // Ensure the new review is in the database
+            Assert.IsTrue(result);
+            Assert.AreEqual(1, await _context.Reviews.CountAsync(r => r.ReviewId == 4));
         }
 
+        /// <summary>
+        /// Tests that UpdateReviewAsync updates the content of an existing review.
+        /// </summary>
         [TestMethod]
         public async Task UpdateReviewAsync_UpdatesReviewSuccessfully_WhenReviewExists()
         {
-            // Arrange
             var existingReview = new Review
             {
                 ReviewId = 1,
@@ -95,19 +103,19 @@ namespace CineBuzzApi.Services
                 Content = "It was great!"
             };
 
-            // Act
             var result = await _service.UpdateReviewAsync(existingReview.ReviewId, updatedReview);
 
-            // Assert
-            Assert.IsTrue(result); // Verify the update was successful
+            Assert.IsTrue(result);
             var reviewInDb = await _context.Reviews.FindAsync(existingReview.ReviewId);
-            Assert.AreEqual("It was great!", reviewInDb.Content); // Verify that the content was updated
+            Assert.AreEqual("It was great!", reviewInDb.Content);
         }
 
+        /// <summary>
+        /// Tests that DeleteReviewAsync removes an existing review from the database.
+        /// </summary>
         [TestMethod]
         public async Task DeleteReviewAsync_DeletesReviewSuccessfully_WhenReviewExists()
         {
-            // Arrange
             var reviewToDelete = new Review
             {
                 ReviewId = 1,
@@ -119,13 +127,11 @@ namespace CineBuzzApi.Services
             _context.Reviews.Add(reviewToDelete);
             await _context.SaveChangesAsync();
 
-            // Act
             var result = await _service.DeleteReviewAsync(reviewToDelete.ReviewId);
 
-            // Assert
-            Assert.IsTrue(result); // Verify the deletion was successful
+            Assert.IsTrue(result);
             var deletedReview = await _context.Reviews.FindAsync(reviewToDelete.ReviewId);
-            Assert.IsNull(deletedReview); // Verify that the review no longer exists in the database
+            Assert.IsNull(deletedReview);
         }
     }
 }

@@ -38,6 +38,14 @@ namespace CineBuzzApi.Controllers
             return Ok(ticket); // If found, return the ticket with HTTP 200 status.
         }
 
+        // Gets all tickets by a movie Id.
+        [HttpGet("movie/{movieId}")]
+        public async Task<ActionResult<Ticket[]>> GetTicketsByMovieId(int movieId)
+        {
+            var tickets = await _ticketService.GetTicketsByMovieIdAsync(movieId);
+            return Ok(tickets?.ToArray() ?? Array.Empty<Ticket>());
+        }
+
         // Creates a new ticket.
         [HttpPost]
         public async Task<ActionResult<Ticket>> Post([FromBody] Ticket ticket)

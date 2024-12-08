@@ -31,7 +31,15 @@ namespace CineBuzzApi.Services
             // Find the first ticket that matches the provided ID, including its movie time details.
             return await _context.Tickets.Include(t => t.MovieTime).FirstOrDefaultAsync(t => t.TicketId == ticketId);
         }
-
+        // Gets all tickets for a specific movie by its ID.
+        public async Task<List<Ticket>> GetTicketsByMovieIdAsync(int movieId)
+        {
+            // Retrieve tickets where the associated MovieTime has the specified MovieId
+            return await _context.Tickets
+                .Include(ticket => ticket.MovieTime) // Include the MovieTime navigation property
+                .Where(ticket => ticket.MovieTime != null && ticket.MovieTime.MovieId == movieId) // Filter by MovieId
+                .ToListAsync(); // Convert to a list asynchronously
+        }
         // Adds a new ticket to the database and saves the change.
         public async Task<Ticket> AddTicketAsync(Ticket ticket)
         {

@@ -2,9 +2,7 @@
 using CineBuzzApi.Models;
 using CineBuzzApi.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System.Threading.Tasks;
 
 namespace CineBuzzTests.Controllers
 {
@@ -17,18 +15,16 @@ namespace CineBuzzTests.Controllers
         [TestInitialize]
         public void Setup()
         {
-            // Initialize the mock service
             _mockPaymentRequestService = new Mock<IPaymentRequestService>();
-
-            // Instantiate the controller with the mock service
             _controller = new PaymentRequestsController(_mockPaymentRequestService.Object);
         }
 
-
+        /// <summary>
+        /// Tests if ProcessPayment returns Ok for a valid payment request.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_ValidRequest_ReturnsOk()
         {
-            // Arrange
             var validRequest = new PaymentRequest
             {
                 CartId = 123,
@@ -43,19 +39,20 @@ namespace CineBuzzTests.Controllers
                 .Setup(service => service.AddPaymentRequestAsync(It.IsAny<PaymentRequest>()))
                 .ReturnsAsync(validRequest);
 
-            // Act
             var result = await _controller.ProcessPayment(validRequest);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
             var okResult = result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual("Payment processed successfully", okResult.Value.GetType().GetProperty("Message")?.GetValue(okResult.Value));
         }
+
+        /// <summary>
+        /// Tests if ProcessPayment returns BadRequest for an invalid card number.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_InvalidCardNumber_ReturnsBadRequest()
         {
-            // Arrange
             var invalidRequest = new PaymentRequest
             {
                 CartId = 123,
@@ -66,19 +63,20 @@ namespace CineBuzzTests.Controllers
                 CVC = "123"
             };
 
-            // Act
             var result = await _controller.ProcessPayment(invalidRequest);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
             var badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual("Invalid card number", badRequestResult.Value.GetType().GetProperty("Message")?.GetValue(badRequestResult.Value));
         }
+
+        /// <summary>
+        /// Tests if ProcessPayment returns BadRequest for an invalid expiration date.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_InvalidExpirationDate_ReturnsBadRequest()
         {
-            // Arrange
             var invalidRequest = new PaymentRequest
             {
                 CartId = 123,
@@ -89,19 +87,20 @@ namespace CineBuzzTests.Controllers
                 CVC = "123"
             };
 
-            // Act
             var result = await _controller.ProcessPayment(invalidRequest);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
             var badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual("Invalid expiration date format", badRequestResult.Value.GetType().GetProperty("Message")?.GetValue(badRequestResult.Value));
         }
+
+        /// <summary>
+        /// Tests if ProcessPayment returns BadRequest for a missing cardholder name.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_MissingCardholderName_ReturnsBadRequest()
         {
-            // Arrange
             var invalidRequest = new PaymentRequest
             {
                 CartId = 123,
@@ -112,19 +111,20 @@ namespace CineBuzzTests.Controllers
                 CVC = "123"
             };
 
-            // Act
             var result = await _controller.ProcessPayment(invalidRequest);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
             var badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);
             Assert.AreEqual("Cardholder name is required", badRequestResult.Value.GetType().GetProperty("Message")?.GetValue(badRequestResult.Value));
         }
+
+        /// <summary>
+        /// Tests if ProcessPayment returns BadRequest for an invalid CVC.
+        /// </summary>
         [TestMethod]
         public async Task ProcessPayment_InvalidCVC_ReturnsBadRequest()
         {
-            // Arrange
             var invalidRequest = new PaymentRequest
             {
                 CartId = 123,
@@ -135,10 +135,8 @@ namespace CineBuzzTests.Controllers
                 CVC = "12"
             };
 
-            // Act
             var result = await _controller.ProcessPayment(invalidRequest);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(BadRequestObjectResult));
             var badRequestResult = result as BadRequestObjectResult;
             Assert.IsNotNull(badRequestResult);

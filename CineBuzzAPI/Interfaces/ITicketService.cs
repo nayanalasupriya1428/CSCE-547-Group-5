@@ -22,6 +22,9 @@ namespace CineBuzzApi.Services
 
         // Deletes a ticket from the database based on its ID asynchronously.
         Task DeleteTicketAsync(int ticketId);
+
+        // Gets a list of tickets for a specific movie by its ID asynchronously.
+        Task<List<Ticket>> GetTicketsByMovieIdAsync(int movieId);
     }
 }
 

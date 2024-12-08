@@ -20,7 +20,7 @@ namespace CineBuzzApi.Services
         public void Setup()
         {
             var options = new DbContextOptionsBuilder<CineBuzzDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique database per test
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
             _context = new CineBuzzDbContext(options);
@@ -34,10 +34,12 @@ namespace CineBuzzApi.Services
             _context.Dispose();
         }
 
+        /// <summary>
+        /// Tests if GetAllPaymentRequestsAsync returns all payment requests when they exist.
+        /// </summary>
         [TestMethod]
         public async Task GetAllPaymentRequestsAsync_ReturnsAllPaymentRequests_WhenRequestsExist()
         {
-            // Arrange - there are 4 payment requests
             _context.PaymentRequests.RemoveRange(_context.PaymentRequests);
             var paymentRequests = new List<PaymentRequest>
             {
@@ -47,17 +49,18 @@ namespace CineBuzzApi.Services
             _context.PaymentRequests.AddRange(paymentRequests);
             await _context.SaveChangesAsync();
 
-            // Act
             var result = await _service.GetAllPaymentRequestsAsync();
 
-            // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual(2, result.Count());
         }
+
+        /// <summary>
+        /// Tests if AddPaymentRequestAsync adds a valid payment request successfully.
+        /// </summary>
         [TestMethod]
         public async Task AddPaymentRequestAsync_AddsPaymentRequestSuccessfully_WhenRequestIsValid()
         {
-            // Arrange
             _context.PaymentRequests.RemoveRange(_context.PaymentRequests);
             var newPaymentRequest = new PaymentRequest
             {
@@ -68,21 +71,22 @@ namespace CineBuzzApi.Services
                 CartId = 3
             };
 
-            // Act
             var result = await _service.AddPaymentRequestAsync(newPaymentRequest);
 
-            // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual("4111111111111111", result.CardNumber);
             Assert.AreEqual("10/26", result.ExpirationDate);
             Assert.AreEqual("Alice Wonderland", result.CardholderName);
             Assert.AreEqual("789", result.CVC);
-            Assert.AreEqual(1, await _context.PaymentRequests.CountAsync()); // Ensure that there is only one payment request in the database
+            Assert.AreEqual(1, await _context.PaymentRequests.CountAsync());
         }
+
+        /// <summary>
+        /// Tests if UpdatePaymentRequestAsync updates an existing payment request successfully.
+        /// </summary>
         [TestMethod]
         public async Task UpdatePaymentRequestAsync_UpdatesPaymentRequestSuccessfully_WhenRequestExists()
         {
-            // Arrange
             _context.PaymentRequests.RemoveRange(_context.PaymentRequests);
             var existingPaymentRequest = new PaymentRequest
             {
@@ -106,10 +110,8 @@ namespace CineBuzzApi.Services
                 CartId = 2
             };
 
-            // Act
             var result = await _service.UpdatePaymentRequestAsync(existingPaymentRequest.PaymentRequestId, updatedPaymentRequest);
 
-            // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual("5555555555554444", result.CardNumber);
             Assert.AreEqual("11/24", result.ExpirationDate);
@@ -117,10 +119,13 @@ namespace CineBuzzApi.Services
             Assert.AreEqual("456", result.CVC);
             Assert.AreEqual(2, result.CartId);
         }
+
+        /// <summary>
+        /// Tests if DeletePaymentRequestAsync deletes an existing payment request successfully.
+        /// </summary>
         [TestMethod]
         public async Task DeletePaymentRequestAsync_DeletesPaymentRequestSuccessfully_WhenRequestExists()
         {
-            // Arrange
             _context.PaymentRequests.RemoveRange(_context.PaymentRequests);
             var paymentRequest = new PaymentRequest
             {
@@ -135,14 +140,11 @@ namespace CineBuzzApi.Services
             _context.PaymentRequests.Add(paymentRequest);
             await _context.SaveChangesAsync();
 
-            // Act
             await _service.DeletePaymentRequestAsync(paymentRequest.PaymentRequestId);
 
-            // Assert
             var deletedRequest = await _context.PaymentRequests.FindAsync(paymentRequest.PaymentRequestId);
-            Assert.IsNull(deletedRequest); // Verify that the payment request is deleted
-            Assert.AreEqual(0, await _context.PaymentRequests.CountAsync()); // Ensure no payment requests remain
+            Assert.IsNull(deletedRequest);
+            Assert.AreEqual(0, await _context.PaymentRequests.CountAsync());
         }
-
     }
 }

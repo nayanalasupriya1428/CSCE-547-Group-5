@@ -18,56 +18,56 @@ namespace CineBuzzTests.Controllers
         [TestInitialize]
         public void Setup()
         {
-            // Initialize the mock service
             _mockUserService = new Mock<IUserService>();
-
-            // Instantiate the controller with the mock service
             _controller = new UsersController(_mockUserService.Object);
         }
 
+        /// <summary>
+        /// Tests if Get() returns all users successfully.
+        /// </summary>
         [TestMethod]
         public async Task Get_ReturnsAllUsers()
         {
-            // Arrange
             var users = new List<User>
-    {
-        new User
-        {
-            Id = 1,
-            Email = "john.doe@example.com",
-            Username = "johndoe",
-            FirstName = "John",
-            LastName = "Doe",
-            Password = "password123"
-        },
-        new User
-        {
-            Id = 2,
-            Email = "jane.doe@example.com",
-            Username = "janedoe",
-            FirstName = "Jane",
-            LastName = "Doe",
-            Password = "securepassword"
-        }
-    };
+            {
+                new User
+                {
+                    Id = 1,
+                    Email = "john.doe@example.com",
+                    Username = "johndoe",
+                    FirstName = "John",
+                    LastName = "Doe",
+                    Password = "password123"
+                },
+                new User
+                {
+                    Id = 2,
+                    Email = "jane.doe@example.com",
+                    Username = "janedoe",
+                    FirstName = "Jane",
+                    LastName = "Doe",
+                    Password = "securepassword"
+                }
+            };
 
             _mockUserService
                 .Setup(service => service.GetAllUsersAsync())
-                .ReturnsAsync(users); // Mock the service to return the list of users
+                .ReturnsAsync(users);
 
-            // Act
             var result = await _controller.Get();
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(users, okResult.Value);
         }
+
+        /// <summary>
+        /// Tests if Get(int id) returns the correct user for a valid user ID.
+        /// </summary>
         [TestMethod]
         public async Task Get_WithValidId_ReturnsUser()
         {
-            // Arrange
             int userId = 1;
             var user = new User
             {
@@ -81,38 +81,39 @@ namespace CineBuzzTests.Controllers
 
             _mockUserService
                 .Setup(service => service.GetUserByIdAsync(userId))
-                .ReturnsAsync(user); // Mock the service to return the user for the valid ID
+                .ReturnsAsync(user);
 
-            // Act
             var result = await _controller.Get(userId);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(user, okResult.Value);
         }
 
+        /// <summary>
+        /// Tests if Get(int id) returns NotFound for an invalid user ID.
+        /// </summary>
         [TestMethod]
         public async Task Get_WithInvalidId_ReturnsNotFound()
         {
-            // Arrange
-            int userId = 999; // Nonexistent user ID
+            int userId = 999;
 
             _mockUserService
                 .Setup(service => service.GetUserByIdAsync(userId))
-                .ReturnsAsync((User)null); // Mock the service to return null for the invalid ID
+                .ReturnsAsync((User)null);
 
-            // Act
             var result = await _controller.Get(userId);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
         }
+
+        /// <summary>
+        /// Tests if Post creates a valid user and returns it.
+        /// </summary>
         [TestMethod]
         public async Task Post_ValidUser_ReturnsCreatedUser()
         {
-            // Arrange
             var newUser = new User
             {
                 Id = 1,
@@ -125,23 +126,24 @@ namespace CineBuzzTests.Controllers
 
             _mockUserService
                 .Setup(service => service.AddUserAsync(It.IsAny<User>()))
-                .ReturnsAsync(newUser); // Mock the service to return the created user
+                .ReturnsAsync(newUser);
 
-            // Act
             var result = await _controller.Post(newUser);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(CreatedAtActionResult));
             var createdResult = result.Result as CreatedAtActionResult;
             Assert.IsNotNull(createdResult);
-            Assert.AreEqual(nameof(_controller.Get), createdResult.ActionName); // Ensure the action name matches "Get"
-            Assert.AreEqual(newUser.Id, createdResult.RouteValues["id"]); // Ensure the route value for ID matches
-            Assert.AreEqual(newUser, createdResult.Value); // Ensure the returned value matches the created user
+            Assert.AreEqual(nameof(_controller.Get), createdResult.ActionName);
+            Assert.AreEqual(newUser.Id, createdResult.RouteValues["id"]);
+            Assert.AreEqual(newUser, createdResult.Value);
         }
+
+        /// <summary>
+        /// Tests if Put updates a valid user and returns it.
+        /// </summary>
         [TestMethod]
         public async Task Put_ValidUserIdAndData_ReturnsUpdatedUser()
         {
-            // Arrange
             int userId = 1;
             var updatedUser = new User
             {
@@ -155,23 +157,23 @@ namespace CineBuzzTests.Controllers
 
             _mockUserService
                 .Setup(service => service.UpdateUserAsync(userId, updatedUser))
-                .ReturnsAsync(updatedUser); // Mock the service to return the updated user
+                .ReturnsAsync(updatedUser);
 
-            // Act
             var result = await _controller.Put(userId, updatedUser);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(updatedUser, okResult.Value);
         }
 
+        /// <summary>
+        /// Tests if Put returns NotFound for an invalid user ID.
+        /// </summary>
         [TestMethod]
         public async Task Put_InvalidUserId_ReturnsNotFound()
         {
-            // Arrange
-            int userId = 999; // Nonexistent user ID
+            int userId = 999;
             var updatedUser = new User
             {
                 Id = userId,
@@ -184,48 +186,45 @@ namespace CineBuzzTests.Controllers
 
             _mockUserService
                 .Setup(service => service.UpdateUserAsync(userId, updatedUser))
-                .ReturnsAsync((User)null); // Mock the service to return null for an invalid ID
+                .ReturnsAsync((User)null);
 
-            // Act
             var result = await _controller.Put(userId, updatedUser);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
         }
+
+        /// <summary>
+        /// Tests if Delete removes a valid user and returns NoContent.
+        /// </summary>
         [TestMethod]
         public async Task Delete_ValidUserId_ReturnsNoContent()
         {
-            // Arrange
             int userId = 1;
 
             _mockUserService
                 .Setup(service => service.DeleteUserAsync(userId))
-                .Returns(Task.CompletedTask); // Mock the service to simulate successful deletion
+                .Returns(Task.CompletedTask);
 
-            // Act
             var result = await _controller.Delete(userId);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(NoContentResult));
         }
 
+        /// <summary>
+        /// Tests if Delete returns NotFound for an invalid user ID.
+        /// </summary>
         [TestMethod]
         public async Task Delete_InvalidUserId_ReturnsNotFound()
         {
-            // Arrange
-            int userId = 999; // Nonexistent user ID
+            int userId = 999;
 
             _mockUserService
                 .Setup(service => service.DeleteUserAsync(userId))
-                .Throws(new KeyNotFoundException()); // Mock the service to throw KeyNotFoundException for invalid ID
+                .Throws(new KeyNotFoundException());
 
-            // Act
             var result = await _controller.Delete(userId);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
-
-
     }
 }

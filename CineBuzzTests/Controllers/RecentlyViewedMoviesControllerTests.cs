@@ -17,17 +17,16 @@ namespace CineBuzzTests.Controllers
         [TestInitialize]
         public void Setup()
         {
-            // Initialize the mock service
             _mockRecentlyViewedMoviesService = new Mock<IRecentlyViewedMoviesService>();
-
-            // Instantiate the controller with the mock service
             _controller = new RecentlyViewedMoviesController(_mockRecentlyViewedMoviesService.Object);
         }
 
+        /// <summary>
+        /// Tests if AddMovieToRecentlyViewed adds a valid movie and returns Ok.
+        /// </summary>
         [TestMethod]
         public void AddMovieToRecentlyViewed_ValidMovie_ReturnsOk()
         {
-            // Arrange
             var movie = new Movie
             {
                 MovieId = 1,
@@ -38,19 +37,20 @@ namespace CineBuzzTests.Controllers
 
             _mockRecentlyViewedMoviesService.Setup(service => service.AddMovieToRecentlyViewed(movie));
 
-            // Act
             var result = _controller.AddMovieToRecentlyViewed(movie);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(OkObjectResult));
             var okResult = result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual("Movie added to recently viewed list.", okResult.Value.GetType().GetProperty("Message")?.GetValue(okResult.Value));
         }
+
+        /// <summary>
+        /// Tests if GetRecentlyViewedMovies returns a list of movies.
+        /// </summary>
         [TestMethod]
         public void GetRecentlyViewedMovies_ReturnsListOfMovies()
         {
-            // Arrange
             var movies = new List<Movie>
             {
                 new Movie { MovieId = 1, Title = "Test Movie 1", Description = "Description 1", Genres = new List<string> { "Drama" } },
@@ -59,10 +59,8 @@ namespace CineBuzzTests.Controllers
 
             _mockRecentlyViewedMoviesService.Setup(service => service.GetRecentlyViewedMovies()).Returns(movies);
 
-            // Act
             var result = _controller.GetRecentlyViewedMovies();
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);

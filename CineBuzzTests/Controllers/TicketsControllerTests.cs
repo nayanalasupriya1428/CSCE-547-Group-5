@@ -15,40 +15,40 @@ namespace CineBuzzTests.Controllers
         [TestInitialize]
         public void Setup()
         {
-            // Initialize the mock service
             _mockTicketService = new Mock<ITicketService>();
-
-            // Instantiate the controller with the mock service
             _controller = new TicketsController(_mockTicketService.Object);
         }
 
+        /// <summary>
+        /// Tests if Get() returns all tickets successfully.
+        /// </summary>
         [TestMethod]
         public async Task Get_ReturnsAllTickets()
         {
-            // Arrange
             var tickets = new List<Ticket>
-    {
-        new Ticket { TicketId = 1, MovieTimeId = 101, Price = 10.50, Quantity = 2, Availability = true, SeatNumber = 5 },
-        new Ticket { TicketId = 2, MovieTimeId = 102, Price = 12.00, Quantity = 1, Availability = true, SeatNumber = 8 }
-    };
+            {
+                new Ticket { TicketId = 1, MovieTimeId = 101, Price = 10.50, Quantity = 2, Availability = true, SeatNumber = 5 },
+                new Ticket { TicketId = 2, MovieTimeId = 102, Price = 12.00, Quantity = 1, Availability = true, SeatNumber = 8 }
+            };
 
             _mockTicketService
                 .Setup(service => service.GetAllTicketsAsync())
-                .ReturnsAsync(tickets); // Mock the service to return the list of tickets
+                .ReturnsAsync(tickets);
 
-            // Act
             var result = await _controller.Get();
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(tickets, okResult.Value);
         }
+
+        /// <summary>
+        /// Tests if Get(int id) returns the correct ticket for a valid ID.
+        /// </summary>
         [TestMethod]
         public async Task Get_WithValidId_ReturnsTicket()
         {
-            // Arrange
             int ticketId = 1;
             var ticket = new Ticket
             {
@@ -62,38 +62,39 @@ namespace CineBuzzTests.Controllers
 
             _mockTicketService
                 .Setup(service => service.GetTicketByIdAsync(ticketId))
-                .ReturnsAsync(ticket); // Mock the service to return the ticket for the valid ID
+                .ReturnsAsync(ticket);
 
-            // Act
             var result = await _controller.Get(ticketId);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(ticket, okResult.Value);
         }
 
+        /// <summary>
+        /// Tests if Get(int id) returns NotFound for an invalid ID.
+        /// </summary>
         [TestMethod]
         public async Task Get_WithInvalidId_ReturnsNotFound()
         {
-            // Arrange
-            int ticketId = 999; // Nonexistent ticket ID
+            int ticketId = 999;
 
             _mockTicketService
                 .Setup(service => service.GetTicketByIdAsync(ticketId))
-                .ReturnsAsync((Ticket)null); // Mock the service to return null for the invalid ID
+                .ReturnsAsync((Ticket)null);
 
-            // Act
             var result = await _controller.Get(ticketId);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
         }
+
+        /// <summary>
+        /// Tests if Post creates a valid ticket and returns it.
+        /// </summary>
         [TestMethod]
         public async Task Post_ValidTicket_ReturnsCreatedTicket()
         {
-            // Arrange
             var ticket = new Ticket
             {
                 TicketId = 1,
@@ -106,23 +107,24 @@ namespace CineBuzzTests.Controllers
 
             _mockTicketService
                 .Setup(service => service.AddTicketAsync(ticket))
-                .ReturnsAsync(ticket); // Mock the service to return the created ticket
+                .ReturnsAsync(ticket);
 
-            // Act
             var result = await _controller.Post(ticket);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(CreatedAtActionResult));
             var createdResult = result.Result as CreatedAtActionResult;
             Assert.IsNotNull(createdResult);
-            Assert.AreEqual(nameof(_controller.Get), createdResult.ActionName); // Ensure the action name matches "Get"
-            Assert.AreEqual(ticket.TicketId, createdResult.RouteValues["id"]); // Ensure the route value for ID matches
-            Assert.AreEqual(ticket, createdResult.Value); // Ensure the returned value matches the created ticket
+            Assert.AreEqual(nameof(_controller.Get), createdResult.ActionName);
+            Assert.AreEqual(ticket.TicketId, createdResult.RouteValues["id"]);
+            Assert.AreEqual(ticket, createdResult.Value);
         }
+
+        /// <summary>
+        /// Tests if Put updates a ticket successfully for a valid ID and data.
+        /// </summary>
         [TestMethod]
         public async Task Put_ValidTicketIdAndData_ReturnsUpdatedTicket()
         {
-            // Arrange
             int ticketId = 1;
             var updatedTicket = new Ticket
             {
@@ -136,23 +138,23 @@ namespace CineBuzzTests.Controllers
 
             _mockTicketService
                 .Setup(service => service.UpdateTicketAsync(ticketId, updatedTicket))
-                .ReturnsAsync(updatedTicket); // Mock the service to return the updated ticket
+                .ReturnsAsync(updatedTicket);
 
-            // Act
             var result = await _controller.Put(ticketId, updatedTicket);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(OkObjectResult));
             var okResult = result.Result as OkObjectResult;
             Assert.IsNotNull(okResult);
             Assert.AreEqual(updatedTicket, okResult.Value);
         }
 
+        /// <summary>
+        /// Tests if Put returns NotFound for an invalid ticket ID.
+        /// </summary>
         [TestMethod]
         public async Task Put_InvalidTicketId_ReturnsNotFound()
         {
-            // Arrange
-            int ticketId = 999; // Nonexistent ticket ID
+            int ticketId = 999;
             var updatedTicket = new Ticket
             {
                 TicketId = ticketId,
@@ -165,47 +167,45 @@ namespace CineBuzzTests.Controllers
 
             _mockTicketService
                 .Setup(service => service.UpdateTicketAsync(ticketId, updatedTicket))
-                .ReturnsAsync((Ticket)null); // Mock the service to return null for an invalid ID
+                .ReturnsAsync((Ticket)null);
 
-            // Act
             var result = await _controller.Put(ticketId, updatedTicket);
 
-            // Assert
             Assert.IsInstanceOfType(result.Result, typeof(NotFoundResult));
         }
+
+        /// <summary>
+        /// Tests if Delete removes a ticket successfully for a valid ID.
+        /// </summary>
         [TestMethod]
         public async Task Delete_ValidTicketId_ReturnsNoContent()
         {
-            // Arrange
             int ticketId = 1;
 
             _mockTicketService
                 .Setup(service => service.DeleteTicketAsync(ticketId))
-                .Returns(Task.CompletedTask); // Mock the service to successfully delete the ticket
+                .Returns(Task.CompletedTask);
 
-            // Act
             var result = await _controller.Delete(ticketId);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(NoContentResult));
         }
 
+        /// <summary>
+        /// Tests if Delete returns NotFound for an invalid ticket ID.
+        /// </summary>
         [TestMethod]
         public async Task Delete_InvalidTicketId_ReturnsNotFound()
         {
-            // Arrange
-            int ticketId = 999; // Nonexistent ticket ID
+            int ticketId = 999;
 
             _mockTicketService
                 .Setup(service => service.DeleteTicketAsync(ticketId))
-                .Throws(new KeyNotFoundException()); // Mock the service to throw exception for invalid ID
+                .Throws(new KeyNotFoundException());
 
-            // Act
             var result = await _controller.Delete(ticketId);
 
-            // Assert
             Assert.IsInstanceOfType(result, typeof(NotFoundResult));
         }
-
     }
 }

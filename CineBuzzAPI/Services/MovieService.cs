@@ -60,13 +60,14 @@ namespace CineBuzzApi.Services
             // 2. The new Movie is replacing the genres of the old Movie.
             // For now, I will assume that the new Movie is replacing the genres of the old Movie.
 
-            // Remove all genres from the old movie.
-            oldMovie.Genres.Clear();
+            oldMovie.Genres.RemoveAll(g => !movie.Genres.Contains(g));
 
-            // Add all genres from the new movie.
             foreach (var genre in movie.Genres)
             {
-                oldMovie.Genres.Add(genre);
+                if (!oldMovie.Genres.Contains(genre))
+                {
+                    oldMovie.Genres.Add(genre);
+                }
             }
 
             return await _context.SaveChangesAsync() > 0;

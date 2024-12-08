@@ -1,11 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Microsoft.EntityFrameworkCore;
-using CineBuzzApi.Services;
+﻿using CineBuzzApi.Data;
 using CineBuzzApi.Models;
-using CineBuzzApi.Data;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace CineBuzzApi.Services
 {
@@ -19,29 +14,31 @@ namespace CineBuzzApi.Services
         public void Setup()
         {
             var options = new DbContextOptionsBuilder<CineBuzzDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Unique database per test
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
             _context = new CineBuzzDbContext(options);
             _service = new MovieService(_context);
         }
+
+        /// <summary>
+        /// Tests if GetAllMoviesAsync returns all movies when movies exist.
+        /// </summary>
         [TestMethod]
         public async Task GetAllMoviesAsync_ReturnsAllMovies_WhenMoviesExist()
         {
-            // Arrange - two movies already exist in the database.
-            
-
-            // Act
             var result = await _service.GetAllMoviesAsync();
 
-            // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual(2, result.Count());
         }
+
+        /// <summary>
+        /// Tests if AddMovieAsync adds a valid movie successfully.
+        /// </summary>
         [TestMethod]
         public async Task AddMovieAsync_AddsMovieSuccessfully_WhenMovieIsValid()
         {
-            // Arrange
             var newMovie = new Movie
             {
                 Title = "Interstellar",
@@ -49,20 +46,21 @@ namespace CineBuzzApi.Services
                 Genres = new List<string> { "Adventure", "Drama", "Sci-Fi" }
             };
 
-            // Act
             var result = await _service.AddMovieAsync(newMovie);
 
-            // Assert
             Assert.IsNotNull(result);
             Assert.AreEqual("Interstellar", result.Title);
             Assert.AreEqual("A team of explorers travel through a wormhole in space.", result.Description);
             Assert.AreEqual(3, result.Genres.Count);
-            Assert.AreEqual(3, await _context.Movies.CountAsync()); // Inception and Matrix in database
+            Assert.AreEqual(3, await _context.Movies.CountAsync());
         }
+
+        /// <summary>
+        /// Tests if RemoveMovieAsync removes a movie successfully when it exists.
+        /// </summary>
         [TestMethod]
         public async Task RemoveMovieAsync_RemovesMovieSuccessfully_WhenMovieExists()
         {
-            // Arrange
             var movieToRemove = new Movie
             {
                 MovieId = 3,
@@ -74,18 +72,19 @@ namespace CineBuzzApi.Services
             _context.Movies.Add(movieToRemove);
             await _context.SaveChangesAsync();
 
-            // Act
             var result = await _service.RemoveMovieAsync(movieToRemove.MovieId);
 
-            // Assert
-            Assert.IsTrue(result); // Verify that the removal was successful
+            Assert.IsTrue(result);
             var movieExists = await _context.Movies.AnyAsync(m => m.MovieId == movieToRemove.MovieId);
-            Assert.IsFalse(movieExists); // Verify that the movie no longer exists in the database
+            Assert.IsFalse(movieExists);
         }
+
+        /// <summary>
+        /// Tests if EditMovieAsync updates a movie successfully when it exists.
+        /// </summary>
         [TestMethod]
         public async Task EditMovieAsync_UpdatesMovieSuccessfully_WhenMovieExists()
         {
-            // Arrange
             var existingMovie = new Movie
             {
                 MovieId = 3,
@@ -104,19 +103,16 @@ namespace CineBuzzApi.Services
                 Genres = new List<string> { "Action", "Thriller" }
             };
 
-            // Act
             var result = await _service.EditMovieAsync(existingMovie.MovieId, updatedMovie);
 
-            // Assert
-            Assert.IsTrue(result); // Verify that the update was successful
+            Assert.IsTrue(result);
             var movieInDb = await _context.Movies.FindAsync(existingMovie.MovieId);
-            Assert.IsNotNull(movieInDb); // Ensure the movie still exists in the database
+            Assert.IsNotNull(movieInDb);
             Assert.AreEqual("Updated Title", movieInDb.Title);
             Assert.AreEqual("Updated description of the movie.", movieInDb.Description);
             Assert.AreEqual(2, movieInDb.Genres.Count);
             CollectionAssert.AreEqual(new List<string> { "Action", "Thriller" }, movieInDb.Genres);
         }
-
 
         [TestCleanup]
         public void Cleanup()
