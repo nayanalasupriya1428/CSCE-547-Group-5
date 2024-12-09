@@ -55,5 +55,38 @@ namespace CineBuzzApi.Controllers
             await _ticketService.DeleteTicketAsync(id);
             return NoContent();
         }
+
+        // Get tickets by movie id
+        [HttpGet("movie/{movieId}")]
+        public async Task<ActionResult<IEnumerable<Ticket>>> GetTicketsByMovieId(int movieId)
+        {
+            var tickets = await _ticketService.GetTicketsByMovieIdAsync(movieId);
+            return Ok(tickets);
+        }
+        // Adds tickets to a movie based on the movieId and number of tickets.
+        [HttpPost("AddTicketsToMovie")]
+        public async Task<IActionResult> AddTicketsToMovie(int movieId, int numberOfTickets)
+        {
+            var success = await _ticketService.AddTicketsToMovieAsync(movieId, numberOfTickets);
+
+            if (success)
+            {
+                return Ok("Tickets added successfully.");
+            }
+            return BadRequest("Failed to add tickets. Verify the MovieId and number of tickets.");
+        }
+        // Removes tickets from a movie based on the movieId and number of tickets.
+        [HttpDelete("RemoveTicketsFromMovie")]
+        public async Task<IActionResult> RemoveTicketsFromMovie(int movieId, int numberOfTickets)
+        {
+            var success = await _ticketService.RemoveTicketsFromMovieAsync(movieId, numberOfTickets);
+
+            if (success)
+            {
+                return Ok("Tickets removed successfully.");
+            }
+            return BadRequest("Failed to remove tickets. Verify the MovieId and number of tickets.");
+        }
+
     }
 }

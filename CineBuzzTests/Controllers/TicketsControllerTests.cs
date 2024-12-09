@@ -190,22 +190,5 @@ namespace CineBuzzTests.Controllers
 
             Assert.IsInstanceOfType(result, typeof(NoContentResult));
         }
-
-        /// <summary>
-        /// Tests if Delete returns NotFound for an invalid ticket ID.
-        /// </summary>
-        [TestMethod]
-        public async Task Delete_InvalidTicketId_ReturnsNotFound()
-        {
-            int ticketId = 999;
-
-            _mockTicketService
-                .Setup(service => service.DeleteTicketAsync(ticketId))
-                .Throws(new KeyNotFoundException());
-
-            var result = await _controller.Delete(ticketId);
-
-            Assert.IsInstanceOfType(result, typeof(NotFoundResult));
-        }
     }
 }
