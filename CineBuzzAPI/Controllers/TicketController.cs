@@ -77,6 +77,19 @@ namespace CineBuzzApi.Controllers
                 return NotFound(); // Return HTTP 404 if the ticket ID is not found
             }
         }
-
+        // Return sucess/failure on adding tickets to a movie
+        [HttpPost]
+        public async Task<ActionResult> AddTicketsToMovie(int movieId, int numberOfTickets)
+        {
+            try
+            {
+                await _ticketService.AddTicketsToMovieAsync(movieId, numberOfTickets);
+                return Ok();
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
