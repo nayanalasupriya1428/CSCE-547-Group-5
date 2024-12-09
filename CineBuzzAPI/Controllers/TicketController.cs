@@ -55,19 +55,13 @@ namespace CineBuzzApi.Controllers
             await _ticketService.DeleteTicketAsync(id);
             return NoContent();
         }
-        // Return sucess/failure on adding tickets to a movie
-        [HttpPost]
-        public async Task<ActionResult> AddTicketsToMovie(int movieId, int numberOfTickets)
+
+        // Get tickets by movie id
+        [HttpGet("movie/{movieId}")]
+        public async Task<ActionResult<IEnumerable<Ticket>>> GetTicketsByMovieId(int movieId)
         {
-            try
-            {
-                await _ticketService.AddTicketsToMovieAsync(movieId, numberOfTickets);
-                return Ok();
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var tickets = await _ticketService.GetTicketsByMovieIdAsync(movieId);
+            return Ok(tickets);
         }
     }
 }
