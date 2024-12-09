@@ -75,5 +75,40 @@ namespace CineBuzzApi.Services
                 await _context.SaveChangesAsync();  // Save changes to the database.
             }
         }
+
+        public async Task<bool> AddTicketsToMovieAsync(int movieId, int numberOfTickets)
+        {
+            if (numberOfTickets <= 0)
+                return false;
+
+            var movieTimes = await _context.MovieTimes
+                .Where(mt => mt.MovieId == movieId)
+                .ToListAsync();
+
+            if (movieTimes == null || !movieTimes.Any())
+                return false;
+
+            var newTickets = new List<Ticket>();
+            foreach (var movieTime in movieTimes)
+            {
+                for (int i = 0; i < numberOfTickets; i++)
+                {
+                    newTickets.Add(new Ticket
+                    {
+                        MovieTimeId = movieTime.MovieTimeId,
+                        Price = 10.0,
+                        Quantity = 1,
+                        Availability = true,
+                        SeatNumber = i + 1
+                    });
+                }
+            }
+
+            _context.Tickets.AddRange(newTickets);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
     }
 }

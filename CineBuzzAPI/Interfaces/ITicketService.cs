@@ -25,5 +25,8 @@ namespace CineBuzzApi.Services
 
         // Gets a list of tickets for a specific movie by its ID asynchronously.
         Task<List<Ticket>> GetTicketsByMovieIdAsync(int movieId);
+
+        // Add tickets to a movie based on a movie Id and a number of tickets. Returns sucess or failure of operation.
+        Task<bool> AddTicketsToMovieAsync(int movieId, int numberOfTickets);
     }
 }

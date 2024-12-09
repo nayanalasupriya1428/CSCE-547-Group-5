@@ -63,5 +63,17 @@ namespace CineBuzzApi.Controllers
             var tickets = await _ticketService.GetTicketsByMovieIdAsync(movieId);
             return Ok(tickets);
         }
+        [HttpPost("AddTicketsToMovie")]
+        public async Task<IActionResult> AddTicketsToMovie(int movieId, int numberOfTickets)
+        {
+            var success = await _ticketService.AddTicketsToMovieAsync(movieId, numberOfTickets);
+
+            if (success)
+            {
+                return Ok("Tickets added successfully.");
+            }
+            return BadRequest("Failed to add tickets. Verify the MovieId and number of tickets.");
+        }
+
     }
 }
