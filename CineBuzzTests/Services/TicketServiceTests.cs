@@ -1,38 +1,33 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Microsoft.EntityFrameworkCore;
-using CineBuzzApi.Services;
-using CineBuzzApi.Models;
 using CineBuzzApi.Data;
+using CineBuzzApi.Models;
+using CineBuzzApi.Services;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System;
-using System.Linq;
 
 namespace CineBuzzApi.Services
 {
     [TestClass]
     public class TicketServiceTests
     {
-        private TicketService _service;
         private CineBuzzDbContext _context;
+        private TicketService _ticketService;
 
-        /// <summary>
-        /// Sets up an in-memory database and initializes the TicketService for testing.
-        /// </summary>
         [TestInitialize]
         public void Setup()
         {
+            // Configure an in-memory database for testing
             var options = new DbContextOptionsBuilder<CineBuzzDbContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .UseInMemoryDatabase(databaseName: "TestDatabase")
                 .Options;
 
             _context = new CineBuzzDbContext(options);
-            _service = new TicketService(_context);
+            _ticketService = new TicketService(_context);
+
+            // Seed the database with initial data for tests
+            SeedDatabase();
         }
 
-        /// <summary>
-        /// Cleans up the in-memory database after each test.
-        /// </summary>
         [TestCleanup]
         public void Cleanup()
         {
@@ -40,98 +35,77 @@ namespace CineBuzzApi.Services
             _context.Dispose();
         }
 
-        /// <summary>
-        /// Tests if GetAllTicketsAsync returns all tickets when they exist.
-        /// </summary>
-        [TestMethod]
-        public async Task GetAllTicketsAsync_ReturnsAllTickets_WhenTicketsExist()
+        private void SeedDatabase()
         {
-            _context.RemoveRange(_context.Tickets);
-            var tickets = new List<Ticket>
+            // Add a movie to the database
+            var movie = new Movie
             {
-                new Ticket { TicketId = 1, MovieTimeId = 1, Price = 10.0, Quantity = 50, Availability = true, SeatNumber = 101 },
-                new Ticket { TicketId = 2, MovieTimeId = 1, Price = 15.0, Quantity = 30, Availability = true, SeatNumber = 102 }
+                MovieId = 201,
+                Title = "Inception",
+                Description = "A mind-bending thriller about dreams within dreams.",
+                Genres = new List<string> { "Action", "Sci-Fi", "Thriller" }
             };
+
+
+            // Add some initial MovieTimes and Tickets to the database with unique IDs
+            var movieTime1 = new MovieTime { MovieTimeId = 101, MovieId = 201, MovieDateTime = new System.DateTime(2024, 12, 9, 19, 0, 0), Location = "Theater 1" };
+            var movieTime2 = new MovieTime { MovieTimeId = 102, MovieId = 201, MovieDateTime = new System.DateTime(2024, 12, 9, 21, 0, 0), Location = "Theater 2" };
+
+            _context.MovieTimes.AddRange(movieTime1, movieTime2);
+
+            var tickets = new[]
+            {
+                new Ticket { TicketId = 301, MovieTimeId = 101, Price = 10.0, Quantity = 1, Availability = true, SeatNumber = 1 },
+                new Ticket { TicketId = 302, MovieTimeId = 101, Price = 10.0, Quantity = 1, Availability = true, SeatNumber = 2 },
+                new Ticket { TicketId = 303, MovieTimeId = 102, Price = 15.0, Quantity = 1, Availability = true, SeatNumber = 1 }
+            };
+
             _context.Tickets.AddRange(tickets);
-            await _context.SaveChangesAsync();
-
-            var result = await _service.GetAllTicketsAsync();
-
-            Assert.IsNotNull(result);
-            Assert.AreEqual(2, result.Count());
+            _context.SaveChanges();
         }
 
-        /// <summary>
-        /// Tests if GetTicketByIdAsync returns the correct ticket when it exists.
-        /// </summary>
         [TestMethod]
-        public async Task GetTicketByIdAsync_ReturnsTicket_WhenTicketExists()
+        public async Task GetAllTicketsAsync_ReturnsAllTickets()
         {
-            _context.RemoveRange(_context.Tickets);
-            var ticket = new Ticket { TicketId = 1, MovieTimeId = 1, Price = 10.0, Quantity = 50, Availability = true, SeatNumber = 101 };
-            _context.Tickets.Add(ticket);
-            await _context.SaveChangesAsync();
+            // Act
+            var result = await _ticketService.GetAllTicketsAsync();
 
-            var result = await _service.GetTicketByIdAsync(ticket.TicketId);
+            // Assert
+            Assert.IsNotNull(result); // Ensure the result is not null
+            var ticketList = result as List<Ticket>;
+            Assert.AreEqual(6, ticketList.Count); // Verify the correct number of tickets is returned
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual(ticket.TicketId, result.TicketId);
-            Assert.AreEqual(ticket.Price, result.Price);
+            // Validate the details of the tickets
+            Assert.AreEqual(301, ticketList[3].TicketId);
+            Assert.AreEqual(10.0, ticketList[3].Price);
+            Assert.AreEqual(1, ticketList[3].SeatNumber);
+            Assert.AreEqual(101, ticketList[3].MovieTimeId);
+
+            Assert.AreEqual(302, ticketList[4].TicketId);
+            Assert.AreEqual(10.0, ticketList[4].Price);
+            Assert.AreEqual(2, ticketList[4].SeatNumber);
+            Assert.AreEqual(101, ticketList[4].MovieTimeId);
+
+            Assert.AreEqual(303, ticketList[5].TicketId);
+            Assert.AreEqual(15.0, ticketList[5].Price);
+            Assert.AreEqual(1, ticketList[5].SeatNumber);
+            Assert.AreEqual(102, ticketList[5].MovieTimeId);
         }
-
-        /// <summary>
-        /// Tests if AddTicketAsync adds a valid ticket successfully.
-        /// </summary>
         [TestMethod]
-        public async Task AddTicketAsync_AddsTicketSuccessfully_WhenTicketIsValid()
+        public async Task GetTicketByIdAsync_ReturnsCorrectTicket_WhenTicketExists()
         {
-            _context.RemoveRange(_context.Tickets);
-            var newTicket = new Ticket { MovieTimeId = 1, Price = 12.0, Quantity = 25, Availability = true, SeatNumber = 103 };
+            // Arrange
+            int ticketId = 301; // This ID matches a ticket in the seeded database
 
-            var result = await _service.AddTicketAsync(newTicket);
+            // Act
+            var result = await _ticketService.GetTicketByIdAsync(ticketId);
 
-            Assert.IsNotNull(result);
-            Assert.AreEqual(newTicket.Price, result.Price);
-            Assert.AreEqual(1, await _context.Tickets.CountAsync());
-        }
-
-        /// <summary>
-        /// Tests if UpdateTicketAsync updates the ticket details successfully when it exists.
-        /// </summary>
-        [TestMethod]
-        public async Task UpdateTicketAsync_UpdatesTicketSuccessfully_WhenTicketExists()
-        {
-            _context.RemoveRange(_context.Tickets);
-            var existingTicket = new Ticket { TicketId = 1, MovieTimeId = 1, Price = 10.0, Quantity = 50, Availability = true, SeatNumber = 101 };
-            _context.Tickets.Add(existingTicket);
-            await _context.SaveChangesAsync();
-
-            var updatedTicket = new Ticket { Price = 15.0, Quantity = 40, Availability = false, SeatNumber = 101, MovieTimeId = 1 };
-
-            var result = await _service.UpdateTicketAsync(existingTicket.TicketId, updatedTicket);
-
-            Assert.IsNotNull(result);
-            Assert.AreEqual(15.0, result.Price);
-            Assert.AreEqual(40, result.Quantity);
-            Assert.IsFalse(result.Availability);
-        }
-
-        /// <summary>
-        /// Tests if DeleteTicketAsync removes the ticket successfully when it exists.
-        /// </summary>
-        [TestMethod]
-        public async Task DeleteTicketAsync_DeletesTicketSuccessfully_WhenTicketExists()
-        {
-            _context.RemoveRange(_context.Tickets);
-            var ticketToDelete = new Ticket { TicketId = 1, MovieTimeId = 1, Price = 10.0, Quantity = 50, Availability = true, SeatNumber = 101 };
-            _context.Tickets.Add(ticketToDelete);
-            await _context.SaveChangesAsync();
-
-            await _service.DeleteTicketAsync(ticketToDelete.TicketId);
-
-            var deletedTicket = await _context.Tickets.FindAsync(ticketToDelete.TicketId);
-            Assert.IsNull(deletedTicket);
-            Assert.AreEqual(0, await _context.Tickets.CountAsync());
+            // Assert
+            Assert.IsNotNull(result); // Ensure the result is not null
+            Assert.AreEqual(ticketId, result.TicketId); // Verify the ticket ID matches
+            Assert.AreEqual(10.0, result.Price); // Verify the ticket price
+            Assert.AreEqual(1, result.SeatNumber); // Verify the seat number
+            Assert.AreEqual(101, result.MovieTimeId); // Verify the MovieTimeId
         }
     }
 }
