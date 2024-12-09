@@ -1,59 +1,53 @@
+using CineBuzzApi.Data;
 using CineBuzzApi.Models;
-using CineBuzzApi.Services;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CineBuzzApi.Controllers
+namespace CineBuzzApi.Services
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class TicketsController : ControllerBase
+    public class TicketService : ITicketService
     {
-        private readonly ITicketService _ticketService;
+        private readonly CineBuzzDbContext _context;
 
-        public TicketsController(ITicketService ticketService)
+        public TicketService(CineBuzzDbContext context) => _context = context;
+
+        public async Task<IEnumerable<Ticket>> GetAllTicketsAsync() =>
+            await _context.Tickets.Include(t => t.MovieTime).ToListAsync();
+
+        public async Task<Ticket?> GetTicketByIdAsync(int ticketId) =>
+            await _context.Tickets.Include(t => t.MovieTime).FirstOrDefaultAsync(t => t.TicketId == ticketId);
+
+        public async Task<Ticket> AddTicketAsync(Ticket ticket)
         {
-            _ticketService = ticketService;
+            _context.Tickets.Add(ticket);
+            await _context.SaveChangesAsync();
+            return ticket;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Ticket>>> Get()
+        public async Task<Ticket?> UpdateTicketAsync(int ticketId, Ticket ticket)
         {
-            var tickets = await _ticketService.GetAllTicketsAsync();
-            return Ok(tickets);
+            var existingTicket = await _context.Tickets.FindAsync(ticketId);
+            if (existingTicket == null) return null;
+
+            existingTicket.Price = ticket.Price;
+            existingTicket.Quantity = ticket.Quantity;
+            existingTicket.Availability = ticket.Availability;
+            existingTicket.SeatNumber = ticket.SeatNumber;
+            existingTicket.MovieTimeId = ticket.MovieTimeId;
+
+            await _context.SaveChangesAsync();
+            return existingTicket;
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Ticket>> Get(int id)
+        public async Task DeleteTicketAsync(int ticketId)
         {
-            var ticket = await _ticketService.GetTicketByIdAsync(id);
-            if (ticket == null)
-                return NotFound();
-            return Ok(ticket);
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<Ticket>> Post([FromBody] Ticket ticket)
-        {
-            var createdTicket = await _ticketService.AddTicketAsync(ticket);
-            return CreatedAtAction(nameof(Get), new { id = createdTicket.TicketId }, createdTicket);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<ActionResult<Ticket>> Put(int id, [FromBody] Ticket ticket)
-        {
-            var updatedTicket = await _ticketService.UpdateTicketAsync(id, ticket);
-            if (updatedTicket == null)
-                return NotFound();
-            return Ok(updatedTicket);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            await _ticketService.DeleteTicketAsync(id);
-            return NoContent();
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket != null)
+            {
+                _context.Tickets.Remove(ticket);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
