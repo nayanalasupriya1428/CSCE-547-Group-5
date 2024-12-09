@@ -15,4 +15,9 @@ namespace CineBuzzApi.Models
         [JsonIgnore]
         public MovieTime? MovieTime { get; set; }
     }
+    public class EditTicketRequest
+{
+    public double? Price { get; set; }
+    public int? Quantity { get; set; }
+}
 }

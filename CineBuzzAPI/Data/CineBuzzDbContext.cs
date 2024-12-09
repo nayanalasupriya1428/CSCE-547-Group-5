@@ -33,7 +33,6 @@ namespace CineBuzzApi.Data
                 this.SaveChanges();
             }
 
-        
             // Seed mock data for MovieTime if none exist
             if (MovieTimes != null && !MovieTimes.Any())
             {
@@ -41,14 +40,14 @@ namespace CineBuzzApi.Data
                     new MovieTime
                     {
                         MovieTimeId = 1,
-                        MovieId = 1,  // Assuming Movie with ID 1 exists
+                        MovieId = 1,
                         MovieDateTime = new DateTime(2024, 11, 6, 19, 0, 0), // 7 PM show
                         Location = "Theater 1"
                     },
                     new MovieTime
                     {
                         MovieTimeId = 2,
-                        MovieId = 2,  // Assuming Movie with ID 2 exists
+                        MovieId = 2,
                         MovieDateTime = new DateTime(2024, 11, 6, 21, 0, 0), // 9 PM show
                         Location = "Theater 2"
                     }
@@ -64,7 +63,7 @@ namespace CineBuzzApi.Data
                     new Ticket
                     {
                         TicketId = 1,
-                        MovieTimeId = 1,    // Associated with MovieTime ID 1
+                        MovieTimeId = 1,
                         Price = 10.0,
                         Quantity = 2,
                         Availability = true,
@@ -73,7 +72,7 @@ namespace CineBuzzApi.Data
                     new Ticket
                     {
                         TicketId = 2,
-                        MovieTimeId = 1,    // Associated with MovieTime ID 1
+                        MovieTimeId = 1,
                         Price = 12.0,
                         Quantity = 1,
                         Availability = true,
@@ -82,7 +81,7 @@ namespace CineBuzzApi.Data
                     new Ticket
                     {
                         TicketId = 3,
-                        MovieTimeId = 2,    // Associated with MovieTime ID 2
+                        MovieTimeId = 2,
                         Price = 15.0,
                         Quantity = 1,
                         Availability = false,
@@ -91,132 +90,92 @@ namespace CineBuzzApi.Data
                 );
 
                 this.SaveChanges();
-         
             }
-            
-        
-        
 
-if (PaymentRequests != null && !PaymentRequests.Any())
-{
-    PaymentRequests.AddRange(
-        new PaymentRequest
-        {
-            PaymentRequestId = 1,
-            CartId = 1,
-            CardNumber = "4111111111111111",
-            ExpirationDate = "12/25",
-            CardholderName = "John Doe",
-            CVC = "123"
-        },
-        new PaymentRequest
-        {
-            PaymentRequestId = 2,
-            CartId = 2,
-            CardNumber = "5555555555554444",
-            ExpirationDate = "11/24",
-            CardholderName = "Jane Smith",
-            CVC = "456"
+            // Seed mock data for carts and cart items if none exist
+            if (Carts != null && !Carts.Any())
+            {
+                var cart1 = new Cart
+                {
+                    CartId = 1,
+                    UserId = 1,
+                    Total = 100.0
+                };
+
+                var cartItem1 = new CartItem
+                {
+                    CartItemId = 1,
+                    CartId = 1,
+                    TicketId = 1,
+                    Quantity = 2
+                };
+
+                cart1.Items.Add(cartItem1);
+                Carts.Add(cart1);
+                this.SaveChanges();
+            }
         }
-    );
+           
 
-    this.SaveChanges();
-}
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<User>().HasData(
+                new { Id = 1, Email = "john.doe@example.com", Username = "Johndoe", FirstName = "John", LastName = "Doe", Password = "12345678" },
+                new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
+            );
 
+           
 
-// Add mock data for carts and cart items
-if (Carts != null && !Carts.Any())
-{
-    var cart1 = new Cart
-    {
-        CartId = 1,
-        UserId = 1,
-        Total = 100.0
-    };
+            modelBuilder.Entity<Review>().HasData(
+                new Review { ReviewId = 1, MovieId = 1, UserId = 1, Content = "Amazing movie!" },
+                new Review { ReviewId = 2, MovieId = 2, UserId = 2, Content = "A classic!" }
+            );
 
-    var cartItem1 = new CartItem
-    {
-        CartItemId = 1,
-        CartId = 1,
-        TicketId = 1,
-        Quantity = 2,
-    };
+            modelBuilder.Entity<Review>()
+                .HasOne<Movie>() // Each review is linked to a movie
+                .WithMany(m => m.Reviews)
+                .HasForeignKey(r => r.MovieId);
 
-    cart1.Items.Add(cartItem1);
-    Carts.Add(cart1);
-    this.SaveChanges();
-}
-        }
-protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<User>().HasData(
-            new { Id = 1, Email = "john.doe@example.com", Username = "Johndoe", FirstName = "John", LastName = "Doe", Password = "12345678" },
-            new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
-        );
+            modelBuilder.Entity<Review>()
+                .HasOne<User>()
+                .WithMany(u => u.Reviews)
+                .HasForeignKey(r => r.UserId);
 
-        // Assume NotificationPreferencesId is a foreign key in User for linking
-        modelBuilder.Entity<NotificationPreferences>().HasData(
-            new { Id = 1, UserId = 1, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Daily },
-            new { Id = 2, UserId = 2, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Weekly }
-        );
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.MovieTime)
+                .WithMany(mt => mt.Tickets)
+                .HasForeignKey(t => t.MovieTimeId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        // If using NotificationTypes as a linked entity, you'll need to seed this data separately and handle it appropriately.
-        // User - Cart (1-to-1)
-        // modelBuilder.Entity<Cart>()
-        //     .HasOne(c => c.User)
-        //     .HasForeignKey<Cart>(c => c.UserId)
-        //     .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.Cart)
+                .WithMany(c => c.Items)
+                .HasForeignKey(ci => ci.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        // Movie - MovieTime (1-to-Many)
-        // modelBuilder.Entity<MovieTime>()
-        //     .HasOne(mt => mt.Movie)
-        //     .WithMany(m => m.MovieTimes) // Navigation property from Movie
-        //     .HasForeignKey(mt => mt.MovieId)
-        //     .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.Ticket)
+                .WithMany()
+                .HasForeignKey(ci => ci.TicketId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        // MovieTime - Ticket (1-to-Many)
-        modelBuilder.Entity<Ticket>()
-            .HasOne(t => t.MovieTime)
-            .WithMany(mt => mt.Tickets) // Navigation property from MovieTime
-            .HasForeignKey(t => t.MovieTimeId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Cart - CartItem (1-to-Many)
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Cart)
-            .WithMany(c => c.Items) // Navigation property from Cart
-            .HasForeignKey(ci => ci.CartId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // CartItem - Ticket (Many-to-1)
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Ticket)
-            .WithMany() // Ticket does not have a navigation property for CartItems
-            .HasForeignKey(ci => ci.TicketId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevent ticket deletion if in use
-
-        // Cart - PaymentRequest (1-to-1)
-        modelBuilder.Entity<PaymentRequest>()
-            .HasOne<Cart>()
-            .WithOne()
-            .HasForeignKey<PaymentRequest>(pr => pr.CartId)
-            .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PaymentRequest>()
+                .HasOne<Cart>()
+                .WithOne()
+                .HasForeignKey<PaymentRequest>(pr => pr.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             base.OnModelCreating(modelBuilder);
         }
 
-        
-
+        public DbSet<Review> Reviews { get; set; }
         public DbSet<Movie> Movies { get; set; }
         public DbSet<User> Users { get; set; }
-        public DbSet<MovieTime> MovieTimes { get; set; } // Add DbSet for MovieTime
+        public DbSet<MovieTime> MovieTimes { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
-         public DbSet<PaymentRequest> PaymentRequests { get; set; }
-         public DbSet<Cart> Carts { get; set; }
-         public DbSet<CartItem> CartItems { get; set; }
-         public DbSet<NotificationPreferences> NotificationPreferences { get; set; }
-
-
-
+        public DbSet<PaymentRequest> PaymentRequests { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
+       
     }
 }

@@ -55,5 +55,32 @@ namespace CineBuzzApi.Controllers
             await _ticketService.DeleteTicketAsync(id);
             return NoContent();
         }
+        [HttpPost("AddTicketsToMovie/{movieTimeId}")]
+   public async Task<ActionResult<Ticket>> AddTicketsToMovie(int movieTimeId, [FromBody] int numberOfTickets)
+{
+    var addedTicket = await _ticketService.AddTicketsAsync(movieTimeId, numberOfTickets);
+    if (addedTicket == null)
+        return BadRequest("Could not add tickets");
+    return CreatedAtAction(nameof(Get), new { id = addedTicket.TicketId }, addedTicket);
+}
+
+[HttpDelete("RemoveTicketsFromMovie/{ticketId}")]
+public async Task<ActionResult> RemoveTicketsFromMovie(int ticketId, [FromBody] int numberOfTickets)
+{
+    var result = await _ticketService.RemoveTicketsAsync(ticketId, numberOfTickets);
+    if (!result)
+        return BadRequest("Could not remove tickets or insufficient quantity");
+    return NoContent();
+}
+
+[HttpPut("EditTickets/{ticketId}")]
+public async Task<ActionResult<Ticket>> EditTickets(int ticketId, [FromBody] EditTicketRequest editRequest)
+{
+    var updatedTicket = await _ticketService.UpdateTicketAsync(ticketId, editRequest.Price, editRequest.Quantity);
+    if (updatedTicket == null)
+        return NotFound("Ticket not found");
+    return Ok(updatedTicket);
+}
+
     }
 }

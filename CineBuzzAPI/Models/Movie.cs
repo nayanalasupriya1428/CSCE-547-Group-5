@@ -16,6 +16,7 @@ namespace CineBuzzApi.Models
 
         // A list of genres associated with the movie, using List collection
         public List<string> Genres { get; set; }
+          public List<Review> Reviews { get; set; } // Navigation property for reviews
 
         // Constructor to initialize the Genres list
         public Movie()

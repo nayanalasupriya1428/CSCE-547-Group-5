@@ -56,5 +56,48 @@ namespace CineBuzzApi.Services
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<Ticket> AddTicketsAsync(int movieTimeId, int quantity)
+{
+    var ticket = new Ticket
+    {
+        MovieTimeId = movieTimeId,
+        Quantity = quantity,
+        Price = 10.00,  // Default price, can be adjusted as needed
+        Availability = true,  // Assuming new tickets are available by default
+    };
+
+    _context.Tickets.Add(ticket);
+    await _context.SaveChangesAsync();
+    return ticket;
+}
+
+public async Task<bool> RemoveTicketsAsync(int ticketId, int quantity)
+{
+    var ticket = await _context.Tickets.FindAsync(ticketId);
+    if (ticket == null || ticket.Quantity < quantity) return false;
+
+    ticket.Quantity -= quantity;
+    if (ticket.Quantity == 0)
+        _context.Tickets.Remove(ticket);
+    else
+        _context.Tickets.Update(ticket);
+
+    await _context.SaveChangesAsync();
+    return true;
+}
+
+public async Task<Ticket> UpdateTicketAsync(int ticketId, double? price, int? quantity)
+{
+    var ticket = await _context.Tickets.FindAsync(ticketId);
+    if (ticket == null) return null;
+
+    if (price.HasValue) ticket.Price = price.Value;
+    if (quantity.HasValue) ticket.Quantity = quantity.Value;
+
+    _context.Tickets.Update(ticket);
+    await _context.SaveChangesAsync();
+    return ticket;
+}
+
     }
 }

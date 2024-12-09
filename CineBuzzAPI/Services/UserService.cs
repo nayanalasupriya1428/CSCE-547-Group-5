@@ -42,7 +42,7 @@ namespace CineBuzzApi.Services
             existingUser.FirstName = user.FirstName;
             existingUser.LastName = user.LastName;
             existingUser.Password = user.Password;
-            existingUser.NotificationPreference = user.NotificationPreference;
+       
 
             await _context.SaveChangesAsync();
             return existingUser;
