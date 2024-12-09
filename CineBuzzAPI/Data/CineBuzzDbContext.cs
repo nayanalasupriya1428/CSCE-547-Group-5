@@ -1,7 +1,5 @@
 using CineBuzzApi.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CineBuzzApi.Data
 {
@@ -154,58 +152,232 @@ namespace CineBuzzApi.Data
                 new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
             );
 
-        // Assume NotificationPreferencesId is a foreign key in User for linking
-        //modelBuilder.Entity<NotificationPreferences>().HasData(
-        //    new { Id = 1, UserId = 1, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Daily },
-        //    new { Id = 2, UserId = 2, ReceiveEmailNotifications = true, Frequency = NotificationFrequency.Weekly }
-        //);
+            // **Users Table**
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(u => u.Id); // Primary key
 
-        // If using NotificationTypes as a linked entity, you'll need to seed this data separately and handle it appropriately.
-        // User - Cart (1-to-1)
-        // modelBuilder.Entity<Cart>()
-        //     .HasOne(c => c.User)
-        //     .HasForeignKey<Cart>(c => c.UserId)
-        //     .OnDelete(DeleteBehavior.Cascade);
+                // Email field
+                entity.Property(u => u.Email)
+                    .IsRequired()
+                    .HasMaxLength(255) // Limit email length to 255 characters
+                    .HasAnnotation("EmailPattern", @"^[^@\s]+@[^@\s]+\.[^@\s]+$"); // Enforce email format at database level (if supported)
 
-        // Movie - MovieTime (1-to-Many)
-        // modelBuilder.Entity<MovieTime>()
-        //     .HasOne(mt => mt.Movie)
-        //     .WithMany(m => m.MovieTimes) // Navigation property from Movie
-        //     .HasForeignKey(mt => mt.MovieId)
-        //     .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(u => u.Email)
+                    .IsUnique(); // Enforce unique email constraint
 
-        // MovieTime - Ticket (1-to-Many)
-        modelBuilder.Entity<Ticket>()
-            .HasOne(t => t.MovieTime)
-            .WithMany(mt => mt.Tickets) // Navigation property from MovieTime
-            .HasForeignKey(t => t.MovieTimeId)
-            .OnDelete(DeleteBehavior.Cascade);
+                // Username field
+                entity.Property(u => u.Username)
+                    .IsRequired()
+                    .HasMaxLength(50);
 
-        // Cart - CartItem (1-to-Many)
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Cart)
-            .WithMany(c => c.Items) // Navigation property from Cart
-            .HasForeignKey(ci => ci.CartId)
-            .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(u => u.Username)
+                    .IsUnique(); // Enforce unique username constraint for account uniqueness
 
-        // CartItem - Ticket (Many-to-1)
-        modelBuilder.Entity<CartItem>()
-            .HasOne(ci => ci.Ticket)
-            .WithMany() // Ticket does not have a navigation property for CartItems
-            .HasForeignKey(ci => ci.TicketId)
-            .OnDelete(DeleteBehavior.Restrict); // Prevent ticket deletion if in use
+                // Password field
+                entity.Property(u => u.Password)
+                    .IsRequired()
+                    .HasMaxLength(128); // Account for hashed passwords
 
-        // Cart - PaymentRequest (1-to-1)
-        modelBuilder.Entity<PaymentRequest>()
-            .HasOne<Cart>()
-            .WithOne()
-            .HasForeignKey<PaymentRequest>(pr => pr.CartId)
-            .OnDelete(DeleteBehavior.Cascade);
+                // FirstName and LastName fields
+                entity.Property(u => u.FirstName)
+                    .IsRequired()
+                    .HasMaxLength(50); // Ensure a reasonable limit on names
+
+                entity.Property(u => u.LastName)
+                    .IsRequired()
+                    .HasMaxLength(50);
+            });
+
+
+            // **Movies Table**
+            modelBuilder.Entity<Movie>(entity =>
+            {
+                entity.HasKey(m => m.MovieId); // Primary key
+
+                entity.Property(m => m.Title)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(m => m.Description)
+                    .IsRequired()
+                    .HasMaxLength(1000);
+
+                // Define Genres as a string if stored in a single column
+                entity.Property(m => m.Genres)
+                    .HasConversion(
+                        genres => string.Join(',', genres), // Convert list to string for storage
+                        genres => genres.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
+                    )
+                    .IsRequired();
+            });
+
+
+            // **MovieTimes Table**
+            modelBuilder.Entity<MovieTime>(entity =>
+            {
+                entity.HasKey(mt => mt.MovieTimeId); // Primary key
+
+                entity.Property(mt => mt.MovieDateTime)
+                    .IsRequired();
+
+                entity.Property(mt => mt.Location)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                // Define foreign key relationship to Movie
+                entity.HasOne<Movie>() // Define relationship without navigation property
+                    .WithMany()        // Movie doesn't have a MovieTimes collection
+                    .HasForeignKey(mt => mt.MovieId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Add index for query performance
+                entity.HasIndex(mt => mt.MovieDateTime);
+
+                // Unique constraint to avoid duplicate MovieTime entries
+                entity.HasIndex(mt => new { mt.MovieId, mt.MovieDateTime, mt.Location })
+                    .IsUnique();
+            });
+
+
+            // **Tickets Table**
+            modelBuilder.Entity<Ticket>(entity =>
+            {
+                entity.HasKey(t => t.TicketId); // Primary key
+
+                // Configure Price field
+                entity.Property(t => t.Price)
+                    .IsRequired()
+                    .HasPrecision(10, 2); // Specify precision for monetary values
+
+
+                // Configure Quantity field
+                entity.Property(t => t.Quantity)
+                    .IsRequired();
+
+                // Configure SeatNumber field
+                entity.Property(t => t.SeatNumber)
+                    .IsRequired();
+
+                // Foreign key relationship with MovieTime
+                entity.HasOne<MovieTime>() // Reference MovieTime without requiring a navigation property on MovieTime
+                    .WithMany(mt => mt.Tickets)
+                    .HasForeignKey(t => t.MovieTimeId)
+                    .OnDelete(DeleteBehavior.Cascade); // Cascade delete when a MovieTime is removed
+
+                // Unique constraint to prevent duplicate tickets for the same seat and showtime
+                entity.HasIndex(t => new { t.MovieTimeId, t.SeatNumber })
+                    .IsUnique();
+            });
+
+
+            // **Carts Table**
+            modelBuilder.Entity<Cart>(entity =>
+            {
+                entity.HasKey(c => c.CartId); // Primary key
+
+                // Configure Total field as decimal for monetary precision
+                entity.Property(c => c.Total)
+                    .IsRequired()
+                    .HasPrecision(10, 2); // Set precision for monetary values
+
+                // Foreign key relationship with User
+                entity.HasOne(c => c.User)
+                    .WithMany() // User does not have a navigation property for carts
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Cascade); // Cascade delete carts when a user is deleted
+            });
+
+
+            // **CartItems Table**
+            modelBuilder.Entity<CartItem>(entity =>
+            {
+                entity.HasKey(ci => ci.CartItemId); // Primary key
+
+                // Configure Quantity field
+                entity.Property(ci => ci.Quantity)
+                    .IsRequired();
+
+                // Foreign key relationship with Cart
+                entity.HasOne(ci => ci.Cart)
+                    .WithMany(c => c.Items)
+                    .HasForeignKey(ci => ci.CartId)
+                    .OnDelete(DeleteBehavior.Cascade); // Delete CartItems when Cart is deleted
+
+                // Foreign key relationship with Ticket
+                entity.HasOne(ci => ci.Ticket)
+                    .WithMany() // Ticket does not have a navigation property for CartItems
+                    .HasForeignKey(ci => ci.TicketId)
+                    .OnDelete(DeleteBehavior.Restrict); // Prevent deleting Tickets if they are in a Cart
+
+                // Add unique constraint to prevent duplicate CartItems for the same Ticket in the same Cart
+                entity.HasIndex(ci => new { ci.CartId, ci.TicketId })
+                    .IsUnique();
+            });
+
+
+            // **PaymentRequests Table**
+            modelBuilder.Entity<PaymentRequest>(entity =>
+            {
+                entity.HasKey(pr => pr.PaymentRequestId); // Primary key
+
+                // Configure CardNumber field
+                entity.Property(pr => pr.CardNumber)
+                    .IsRequired()
+                    .HasMaxLength(16); // Basic length validation for card numbers
+
+                // Configure ExpirationDate field
+                entity.Property(pr => pr.ExpirationDate)
+                    .IsRequired()
+                    .HasMaxLength(5); // Format: MM/YY
+
+                // Configure CardholderName field
+                entity.Property(pr => pr.CardholderName)
+                    .IsRequired()
+                    .HasMaxLength(255); // Allow up to 255 characters for cardholder name
+
+                // Configure CVC field
+                entity.Property(pr => pr.CVC)
+                    .IsRequired()
+                    .HasMaxLength(4); // Support both 3- and 4-digit CVCs
+
+                // Foreign key relationship with Cart
+                entity.HasOne<Cart>() // Define FK relationship with Cart
+                    .WithOne() // One-to-one relationship
+                    .HasForeignKey<PaymentRequest>(pr => pr.CartId)
+                    .OnDelete(DeleteBehavior.Cascade); // Delete PaymentRequest when Cart is deleted
+            });
+
+
+            // **Reviews Table**
+            modelBuilder.Entity<Review>(entity =>
+            {
+                entity.HasKey(r => r.ReviewId); // Primary key
+
+                // Configure Content field
+                entity.Property(r => r.Content)
+                    .IsRequired()
+                    .HasMaxLength(2000); // Limit review length to 2000 characters
+
+                // Foreign key relationship with Movie
+                entity.HasOne<Movie>() // Define FK relationship with Movie
+                    .WithMany()        // Movie does not have navigation property for Reviews
+                    .HasForeignKey(r => r.MovieId)
+                    .OnDelete(DeleteBehavior.Cascade); // Delete reviews when a Movie is deleted
+
+                // Foreign key relationship with User
+                entity.HasOne<User>() // Define FK relationship with User
+                    .WithMany()       // User does not have navigation property for Reviews
+                    .HasForeignKey(r => r.UserId)
+                    .OnDelete(DeleteBehavior.Cascade); // Delete reviews when a User is deleted
+
+                // Add index to improve query performance for reviews by User or Movie
+                entity.HasIndex(r => new { r.UserId, r.MovieId });
+            });
+
 
             base.OnModelCreating(modelBuilder);
         }
-
-
 
         public DbSet<Movie> Movies { get; set; }
         public DbSet<User> Users { get; set; }
@@ -216,9 +388,7 @@ namespace CineBuzzApi.Data
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<Review> Reviews { get; set; }
 
-
-
-
-
+        // dotnet ef migrations add ___________
+        // dotnet ef database update
     }
 }
