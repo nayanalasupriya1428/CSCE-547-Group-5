@@ -1,0 +1,254 @@
+using CineBuzzApi.Models;
+using CineBuzzApi.Services;
+using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace CineBuzzApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class TicketsController : ControllerBase
+    {
+        private readonly ITicketService _ticketService;
+
+        public TicketsController(ITicketService ticketService)
+        {
+            _ticketService = ticketService;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Ticket>>> Get()
+        {
+            var tickets = await _ticketService.GetAllTicketsAsync();
+            return Ok(tickets);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Ticket>> Get(int id)
+        {
+            var ticket = await _ticketService.GetTicketByIdAsync(id);
+            if (ticket == null)
+                return NotFound();
+            return Ok(ticket);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Ticket>> Post([FromBody] Ticket ticket)
+        {
+            var createdTicket = await _ticketService.AddTicketAsync(ticket);
+            return CreatedAtAction(nameof(Get), new { id = createdTicket.TicketId }, createdTicket);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Ticket>> Put(int id, [FromBody] Ticket ticket)
+        {
+            var updatedTicket = await _ticketService.UpdateTicketAsync(id, ticket);
+            if (updatedTicket == null)
+                return NotFound();
+            return Ok(updatedTicket);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _ticketService.DeleteTicketAsync(id);
+            return NoContent();
+        }
+
+        // Add tickets to a movie
+        [HttpPost("AddTicketsToMovie")]
+        public async Task<IActionResult> AddTicketsToMovie([FromBody] Movie movie, int numberOfTickets)
+        {
+            await _ticketService.AddTicketsToMovieAsync(movie, numberOfTickets);
+            return Ok("Tickets added successfully.");
+        }
+
+        // Remove tickets from a movie
+        [HttpDelete("RemoveTicketsFromMovie")]
+        public async Task<IActionResult> RemoveTicketsFromMovie([FromBody] Movie movie, int numberOfTickets)
+        {
+            await _ticketService.RemoveTicketsFromMovieAsync(movie, numberOfTickets);
+            return Ok("Tickets removed successfully.");
+        }
+
+        // Edit ticket details for a movie
+        [HttpPut("EditTickets")]
+        public async Task<IActionResult> EditTickets([FromBody] Movie movie, [FromBody] Ticket newTicket)
+        {
+            await _ticketService.EditTicketsAsync(movie, newTicket);
+            return Ok("Ticket updated successfully.");
+        }
+    }
+}
+using CineBuzzApi.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace CineBuzzApi.Services
+{
+    public interface ITicketService
+    {
+        Task<IEnumerable<Ticket>> GetAllTicketsAsync();
+        Task<Ticket?> GetTicketByIdAsync(int ticketId);
+        Task<Ticket> AddTicketAsync(Ticket ticket);
+        Task<Ticket?> UpdateTicketAsync(int ticketId, Ticket ticket);
+        Task DeleteTicketAsync(int ticketId);
+        Task AddTicketsToMovieAsync(Movie movie, int numberOfTickets);
+        Task RemoveTicketsFromMovieAsync(Movie movie, int numberOfTickets);
+        Task EditTicketsAsync(Movie movie, Ticket newTicket);
+    }
+}
+using CineBuzzApi.Data;
+using CineBuzzApi.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace CineBuzzApi.Services
+{
+    public class TicketService : ITicketService
+    {
+        private readonly CineBuzzDbContext _context;
+
+        public TicketService(CineBuzzDbContext context) => _context = context;
+
+        public async Task<IEnumerable<Ticket>> GetAllTicketsAsync() =>
+            await _context.Tickets.Include(t => t.MovieTime).ToListAsync();
+
+        public async Task<Ticket?> GetTicketByIdAsync(int ticketId) =>
+            await _context.Tickets.Include(t => t.MovieTime).FirstOrDefaultAsync(t => t.TicketId == ticketId);
+
+        public async Task<Ticket> AddTicketAsync(Ticket ticket)
+        {
+            _context.Tickets.Add(ticket);
+            await _context.SaveChangesAsync();
+            return ticket;
+        }
+
+        public async Task<Ticket?> UpdateTicketAsync(int ticketId, Ticket ticket)
+        {
+            var existingTicket = await _context.Tickets.FindAsync(ticketId);
+            if (existingTicket == null) return null;
+
+            existingTicket.Price = ticket.Price;
+            existingTicket.Quantity = ticket.Quantity;
+            existingTicket.Availability = ticket.Availability;
+            existingTicket.SeatNumber = ticket.SeatNumber;
+            existingTicket.MovieTimeId = ticket.MovieTimeId;
+
+            await _context.SaveChangesAsync();
+            return existingTicket;
+        }
+
+        public async Task DeleteTicketAsync(int ticketId)
+        {
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket != null)
+            {
+                _context.Tickets.Remove(ticket);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task AddTicketsToMovieAsync(Movie movie, int numberOfTickets)
+        {
+            var movieTime = await _context.MovieTimes
+                .FirstOrDefaultAsync(mt => mt.MovieId == movie.MovieId);
+
+            if (movieTime == null)
+            {
+                movieTime = new MovieTime
+                {
+                    MovieId = movie.MovieId,
+                    MovieDateTime = DateTime.Now.AddDays(1),
+                    Location = "Default Theater"
+                };
+                _context.MovieTimes.Add(movieTime);
+                await _context.SaveChangesAsync();
+            }
+
+            for (int i = 0; i < numberOfTickets; i++)
+            {
+                var ticket = new Ticket
+                {
+                    MovieTimeId = movieTime.MovieTimeId,
+                    Price = 10.0,
+                    Quantity = 1,
+                    Availability = true,
+                    SeatNumber = GenerateSeatNumber(movieTime)
+                };
+
+                _context.Tickets.Add(ticket);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task RemoveTicketsFromMovieAsync(Movie movie, int numberOfTickets)
+        {
+            var movieTimes = await _context.MovieTimes
+                .Include(mt => mt.Tickets)
+                .Where(mt => mt.MovieId == movie.MovieId)
+                .ToListAsync();
+
+            int ticketsToRemove = numberOfTickets;
+
+            foreach (var movieTime in movieTimes)
+            {
+                foreach (var ticket in movieTime.Tickets.OrderBy(t => t.TicketId))
+                {
+                    if (ticketsToRemove <= 0) break;
+
+                    if (ticket.Quantity >= ticketsToRemove)
+                    {
+                        ticket.Quantity -= ticketsToRemove;
+                        ticketsToRemove = 0;
+                    }
+                    else
+                    {
+                        ticketsToRemove -= ticket.Quantity;
+                        ticket.Quantity = 0;
+                    }
+                }
+
+                if (ticketsToRemove <= 0) break;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task EditTicketsAsync(Movie movie, Ticket newTicket)
+        {
+            var movieTimes = await _context.MovieTimes
+                .Include(mt => mt.Tickets)
+                .Where(mt => mt.MovieId == movie.MovieId)
+                .ToListAsync();
+
+            foreach (var movieTime in movieTimes)
+            {
+                foreach (var ticket in movieTime.Tickets)
+                {
+                    if (ticket.TicketId == newTicket.TicketId)
+                    {
+                        ticket.Price = newTicket.Price;
+                        ticket.Quantity = newTicket.Quantity;
+                        ticket.Availability = newTicket.Availability;
+                        break;
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private int GenerateSeatNumber(MovieTime movieTime)
+        {
+            var maxSeatNumber = movieTime.Tickets.Any()
+                ? movieTime.Tickets.Max(t => t.SeatNumber)
+                : 100;
+            return maxSeatNumber + 1;
+        }
+    }
+}
