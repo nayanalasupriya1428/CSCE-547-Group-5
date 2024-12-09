@@ -8,6 +8,17 @@ namespace CineBuzzApi.Data
         public CineBuzzDbContext(DbContextOptions<CineBuzzDbContext> options)
             : base(options)
         {
+            // Seed mock data for users if none exist
+            if (Users != null && !Users.Any())
+            {
+                Users.AddRange(
+                    new User { Id = 1, Email = "john.doe@example.com", Username = "Johndoe", FirstName = "John", LastName = "Doe", Password = "12345678" },
+                    new User { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
+                );
+
+                this.SaveChanges();
+            }
+
             // Seed mock data for movies if none exist
             if (Movies != null && !Movies.Any())
             {
@@ -30,7 +41,6 @@ namespace CineBuzzApi.Data
 
                 this.SaveChanges();
             }
-
 
             // Seed mock data for MovieTime if none exist
             if (MovieTimes != null && !MovieTimes.Any())
@@ -144,6 +154,17 @@ namespace CineBuzzApi.Data
                 Carts.Add(cart1);
                 this.SaveChanges();
             }
+
+            // Seed mock data for reviews if none exist
+            if (Reviews != null && !Reviews.Any())
+            {
+                Reviews.AddRange(
+                    new Review { ReviewId = 1, UserId = 1, MovieId = 1, Content = "Amazing movie with great visuals!" },
+                    new Review { ReviewId = 2, UserId = 2, MovieId = 2, Content = "Thought-provoking and revolutionary!" }
+                );
+
+                this.SaveChanges();
+            }
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -243,7 +264,7 @@ namespace CineBuzzApi.Data
             // **Tickets Table**
             modelBuilder.Entity<Ticket>(entity =>
             {
-                entity.HasKey(t => t.TicketId); // Primary key
+                entity.HasKey(t => t.TicketId); // PK
 
                 // Configure Price field
                 entity.Property(t => t.Price)
