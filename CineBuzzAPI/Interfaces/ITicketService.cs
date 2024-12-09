@@ -28,5 +28,8 @@ namespace CineBuzzApi.Services
 
         // Add tickets to a movie based on a movie Id and a number of tickets. Returns sucess or failure of operation.
         Task<bool> AddTicketsToMovieAsync(int movieId, int numberOfTickets);
+
+        // Removes a number of tickets from a movie based on a movie Id and a number of tickets. Returns success or failure of operation.
+        Task<bool> RemoveTicketsFromMovieAsync(int movieId, int numberOfTickets);
     }
 }
