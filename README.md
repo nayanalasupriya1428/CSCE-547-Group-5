@@ -36,10 +36,10 @@ To get the project up and running on your local machine, follow these steps:
 ### Build and Run
 Building the Project
 The project requires running both the backend API and the frontend concurrently:
-Terminal 1 - Run the backend API:
+1. Terminal 1 - Run the backend API:
 cd CineBuzz-API 
 dotnet run
-Terminal 2 - Run the frontend:
+2. Terminal 2 - Run the frontend:
 cd cinebuzzfrontend  
 npm start
 
