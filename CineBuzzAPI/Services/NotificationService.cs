@@ -34,18 +34,6 @@ public class NotificationService : INotificationService
         var response = await client.SendEmailAsync(msg);
     }
 
-    public async Task SendSmsAsync(string phoneNumber, string message)
-    {
-        var accountSid = _configuration["Twilio:AccountSid"];
-        var authToken = _configuration["Twilio:AuthToken"];
-        TwilioClient.Init(accountSid, authToken);
-
-        var messageOptions = new CreateMessageOptions(new PhoneNumber(phoneNumber))
-        {
-            From = new PhoneNumber(_configuration["Twilio:FromNumber"]),
-            Body = message
-        };
-        var messageResult = await MessageResource.CreateAsync(messageOptions);
-    }
+  
 }
 }

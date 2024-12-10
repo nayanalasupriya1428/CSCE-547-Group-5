@@ -1,7 +1,9 @@
 using CineBuzzApi.Data;
 using CineBuzzApi.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CineBuzzApi.Services
@@ -27,6 +29,7 @@ namespace CineBuzzApi.Services
 
         public async Task<Ticket> AddTicketAsync(Ticket ticket)
         {
+            if (ticket == null) throw new ArgumentNullException(nameof(ticket));
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
             return ticket;
@@ -34,6 +37,7 @@ namespace CineBuzzApi.Services
 
         public async Task<Ticket?> UpdateTicketAsync(int ticketId, Ticket ticket)
         {
+            if (ticket == null) throw new ArgumentNullException(nameof(ticket));
             var existingTicket = await _context.Tickets.FindAsync(ticketId);
             if (existingTicket == null) return null;
 
@@ -50,54 +54,87 @@ namespace CineBuzzApi.Services
         public async Task DeleteTicketAsync(int ticketId)
         {
             var ticket = await _context.Tickets.FindAsync(ticketId);
-            if (ticket != null)
-            {
-                _context.Tickets.Remove(ticket);
-                await _context.SaveChangesAsync();
-            }
+            if (ticket == null) return;
+            _context.Tickets.Remove(ticket);
+            await _context.SaveChangesAsync();
         }
-        public async Task<Ticket> AddTicketsAsync(int movieTimeId, int quantity)
-{
-    var ticket = new Ticket
-    {
-        MovieTimeId = movieTimeId,
-        Quantity = quantity,
-        Price = 10.00,  // Default price, can be adjusted as needed
-        Availability = true,  // Assuming new tickets are available by default
-    };
 
-    _context.Tickets.Add(ticket);
-    await _context.SaveChangesAsync();
-    return ticket;
-}
+        public async Task<bool> AddTicketsToMovieAsync(int movieId, int numberOfTickets)
+        {
+            var movieTime = await _context.MovieTimes.FirstOrDefaultAsync(mt => mt.MovieId == movieId);
+            if (movieTime == null)
+            {
+                return false;
+            }
 
-public async Task<bool> RemoveTicketsAsync(int ticketId, int quantity)
-{
-    var ticket = await _context.Tickets.FindAsync(ticketId);
-    if (ticket == null || ticket.Quantity < quantity) return false;
+            var seatNumber = await CalculateNextAvailableSeatNumber(movieTime.MovieTimeId);
+            var ticket = new Ticket
+            {
+                MovieTimeId = movieTime.MovieTimeId,
+                Price = 10.0, // Default price, should be determined by business logic
+                Quantity = numberOfTickets,
+                Availability = true,
+                SeatNumber = seatNumber
+            };
 
-    ticket.Quantity -= quantity;
-    if (ticket.Quantity == 0)
-        _context.Tickets.Remove(ticket);
-    else
-        _context.Tickets.Update(ticket);
+            _context.Tickets.Add(ticket);
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
-    await _context.SaveChangesAsync();
-    return true;
-}
+        public async Task<bool> RemoveTicketsFromMovieAsync(int movieId, int numberOfTickets)
+        {
+            var tickets = await _context.Tickets
+                                       .Where(t => t.MovieTime.MovieId == movieId)
+                                       .ToListAsync();
 
-public async Task<Ticket> UpdateTicketAsync(int ticketId, double? price, int? quantity)
-{
-    var ticket = await _context.Tickets.FindAsync(ticketId);
-    if (ticket == null) return null;
+            if (tickets == null || tickets.Count == 0) return false;
 
-    if (price.HasValue) ticket.Price = price.Value;
-    if (quantity.HasValue) ticket.Quantity = quantity.Value;
+            int ticketsToRemove = numberOfTickets;
+            tickets = tickets.OrderBy(t => t.SeatNumber).ToList();
 
-    _context.Tickets.Update(ticket);
-    await _context.SaveChangesAsync();
-    return ticket;
-}
+            foreach (var ticket in tickets)
+            {
+                if (ticketsToRemove <= 0) break;
 
+                if (ticket.Quantity > ticketsToRemove)
+                {
+                    ticket.Quantity -= ticketsToRemove;
+                    ticketsToRemove = 0;
+                }
+                else
+                {
+                    ticketsToRemove -= ticket.Quantity;
+                    ticket.Quantity = 0;
+                    ticket.Availability = false;
+                }
+
+                _context.Tickets.Update(ticket);
+            }
+
+            await _context.SaveChangesAsync();
+            return ticketsToRemove == 0;
+        }
+
+        public async Task<bool> EditTicketsAsync(int ticketId, EditTicketRequest newTicketDetails)
+        {
+            var ticket = await _context.Tickets.FindAsync(ticketId);
+            if (ticket == null) return false;
+
+            ticket.Price = newTicketDetails.Price ?? ticket.Price;
+            ticket.Quantity = newTicketDetails.Quantity ?? ticket.Quantity;
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private async Task<int> CalculateNextAvailableSeatNumber(int movieTimeId)
+        {
+            var highestSeatNumber = await _context.Tickets
+                                                  .Where(t => t.MovieTimeId == movieTimeId)
+                                                  .MaxAsync(t => (int?)t.SeatNumber) ?? 0;
+
+            return highestSeatNumber + 1;
+        }
     }
 }

@@ -1,79 +1,89 @@
-using CineBuzzApi.Data;
 using CineBuzzApi.Models;
-using Microsoft.EntityFrameworkCore;
+using CineBuzzApi.Services;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CineBuzzApi.Services
+namespace CineBuzzApi.Controllers
 {
-    public class TicketService : ITicketService
+    // Marks the class as a controller with automatic response types and routing for API.
+    [ApiController]
+    [Route("api/[controller]")]
+    public class TicketsController : ControllerBase
     {
-        private readonly CineBuzzDbContext _context;
+        // Dependency injected ticket service for handling ticket-related operations.
+        private readonly ITicketService _ticketService;
 
-        public TicketService(CineBuzzDbContext context) => _context = context;
-
-        public async Task<IEnumerable<Ticket>> GetAllTicketsAsync() =>
-            await _context.Tickets.Include(t => t.MovieTime).ToListAsync();
-
-        public async Task<Ticket?> GetTicketByIdAsync(int ticketId) =>
-            await _context.Tickets.Include(t => t.MovieTime).FirstOrDefaultAsync(t => t.TicketId == ticketId);
-
-        public async Task<Ticket> AddTicketAsync(Ticket ticket)
+        // Constructor initializes the controller with a ticket service.
+        public TicketsController(ITicketService ticketService)
         {
-            _context.Tickets.Add(ticket);
-            await _context.SaveChangesAsync();
-            return ticket;
+            _ticketService = ticketService;
         }
 
-        public async Task<Ticket?> UpdateTicketAsync(int ticketId, Ticket ticket)
+        // Retrieves all tickets and returns them.
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Ticket>>> Get()
         {
-            var existingTicket = await _context.Tickets.FindAsync(ticketId);
-            if (existingTicket == null) return null;
-
-            existingTicket.Price = ticket.Price;
-            existingTicket.Quantity = ticket.Quantity;
-            existingTicket.Availability = ticket.Availability;
-            existingTicket.SeatNumber = ticket.SeatNumber;
-            existingTicket.MovieTimeId = ticket.MovieTimeId;
-
-            await _context.SaveChangesAsync();
-            return existingTicket;
+            var tickets = await _ticketService.GetAllTicketsAsync(); // Get all tickets using the service.
+            return Ok(tickets); // Return the tickets with HTTP 200 status.
         }
 
-        public async Task DeleteTicketAsync(int ticketId)
+        // Retrieves a single ticket by its ID.
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Ticket>> Get(int id)
         {
-            var ticket = await _context.Tickets.FindAsync(ticketId);
-            if (ticket != null)
-            {
-                _context.Tickets.Remove(ticket);
-                await _context.SaveChangesAsync();
-            }
+            var ticket = await _ticketService.GetTicketByIdAsync(id); // Fetch a ticket by ID.
+            if (ticket == null)
+                return NotFound(); // If not found, return HTTP 404.
+            return Ok(ticket); // If found, return the ticket with HTTP 200 status.
         }
-        [HttpPost("AddTicketsToMovie/{movieTimeId}")]
-   public async Task<ActionResult<Ticket>> AddTicketsToMovie(int movieTimeId, [FromBody] int numberOfTickets)
+
+        // Creates a new ticket.
+        [HttpPost]
+        public async Task<ActionResult<Ticket>> Post([FromBody] Ticket ticket)
+        {
+            var createdTicket = await _ticketService.AddTicketAsync(ticket); // Add a new ticket.
+            return CreatedAtAction(nameof(Get), new { id = createdTicket.TicketId }, createdTicket); // Return the created ticket with HTTP 201 status.
+        }
+
+        // Updates an existing ticket.
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Ticket>> Put(int id, [FromBody] Ticket ticket)
+        {
+            var updatedTicket = await _ticketService.UpdateTicketAsync(id, ticket); // Update the ticket.
+            if (updatedTicket == null)
+                return NotFound(); // If the original ticket is not found, return HTTP 404.
+            return Ok(updatedTicket); // If updated successfully, return the updated ticket.
+        }
+
+        // Deletes a ticket by ID.
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await _ticketService.DeleteTicketAsync(id); // Delete the ticket.
+            return NoContent(); // Return an HTTP 204 No Content status to indicate successful deletion.
+        }
+        // Add these actions to TicketsController
+
+[HttpPost("AddTicketsToMovie/{movieId}/{numberOfTickets}")]
+public async Task<IActionResult> AddTicketsToMovie(int movieId, int numberOfTickets)
 {
-    var addedTicket = await _ticketService.AddTicketsAsync(movieTimeId, numberOfTickets);
-    if (addedTicket == null)
-        return BadRequest("Could not add tickets");
-    return CreatedAtAction(nameof(Get), new { id = addedTicket.TicketId }, addedTicket);
+    var result = await _ticketService.AddTicketsToMovieAsync(movieId, numberOfTickets);
+    return Ok(result ? "Success" : "Failure");
 }
 
-[HttpDelete("RemoveTicketsFromMovie/{ticketId}")]
-public async Task<ActionResult> RemoveTicketsFromMovie(int ticketId, [FromBody] int numberOfTickets)
+[HttpDelete("RemoveTicketsFromMovie/{movieId}/{numberOfTickets}")]
+public async Task<IActionResult> RemoveTicketsFromMovie(int movieId, int numberOfTickets)
 {
-    var result = await _ticketService.RemoveTicketsAsync(ticketId, numberOfTickets);
-    if (!result)
-        return BadRequest("Could not remove tickets or insufficient quantity");
-    return NoContent();
+    var result = await _ticketService.RemoveTicketsFromMovieAsync(movieId, numberOfTickets);
+    return Ok(result ? "Success" : "Failure");
 }
 
 [HttpPut("EditTickets/{ticketId}")]
-public async Task<ActionResult<Ticket>> EditTickets(int ticketId, [FromBody] EditTicketRequest editRequest)
+public async Task<IActionResult> EditTickets(int ticketId, [FromBody] EditTicketRequest newTicketDetails)
 {
-    var updatedTicket = await _ticketService.UpdateTicketAsync(ticketId, editRequest.Price, editRequest.Quantity);
-    if (updatedTicket == null)
-        return NotFound("Ticket not found");
-    return Ok(updatedTicket);
+    var result = await _ticketService.EditTicketsAsync(ticketId, newTicketDetails);
+    return Ok(result ? "Success" : "Failure");
 }
 
     }

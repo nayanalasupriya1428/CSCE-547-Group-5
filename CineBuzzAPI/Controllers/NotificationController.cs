@@ -24,12 +24,6 @@ public class NotificationController : ControllerBase
         return Ok("Email sent successfully.");
     }
 
-    [HttpPost("sendSms")]
-    public async Task<IActionResult> SendSms([FromBody] SmsRequest request)
-    {
-        await _notificationService.SendSmsAsync(request.PhoneNumber, request.Message);
-        return Ok("SMS sent successfully.");
-    }
 }
 }
 
@@ -40,8 +34,4 @@ public class EmailRequest
     public string Message { get; set; }
 }
 
-public class SmsRequest
-{
-    public string PhoneNumber { get; set; }
-    public string Message { get; set; }
-}
+

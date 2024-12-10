@@ -64,8 +64,9 @@ namespace CineBuzzApi.Data
                     {
                         TicketId = 1,
                         MovieTimeId = 1,
+                           MovieId = 1,  // Make sure this is consistently set if it's used in your logic
                         Price = 10.0,
-                        Quantity = 2,
+                        Quantity = 4,
                         Availability = true,
                         SeatNumber = 101
                     },
@@ -73,8 +74,9 @@ namespace CineBuzzApi.Data
                     {
                         TicketId = 2,
                         MovieTimeId = 1,
+                        MovieId=2,
                         Price = 12.0,
-                        Quantity = 1,
+                        Quantity = 4,
                         Availability = true,
                         SeatNumber = 102
                     },
@@ -82,8 +84,9 @@ namespace CineBuzzApi.Data
                     {
                         TicketId = 3,
                         MovieTimeId = 2,
+                        MovieId=3,
                         Price = 15.0,
-                        Quantity = 1,
+                        Quantity = 5,
                         Availability = false,
                         SeatNumber = 201
                     }
@@ -124,20 +127,24 @@ namespace CineBuzzApi.Data
                 new { Id = 2, Email = "jane.doe@example.com", Username = "Janedoe", FirstName = "Jane", LastName = "Doe", Password = "23456788" }
             );
 
-           
+            modelBuilder.Entity<Ticket>().HasData(
+        new Ticket { TicketId = 1, MovieTimeId = 1, MovieId=1,Price = 12.50, Quantity = 100, Availability = true, SeatNumber = 1 },
+        new Ticket { TicketId = 2, MovieTimeId = 2, MovieId=2,Price = 15.00, Quantity = 150, Availability = true, SeatNumber = 2 }
+    );
+    
 
             modelBuilder.Entity<Review>().HasData(
                 new Review { ReviewId = 1, MovieId = 1, UserId = 1, Content = "Amazing movie!" },
                 new Review { ReviewId = 2, MovieId = 2, UserId = 2, Content = "A classic!" }
             );
 
-            modelBuilder.Entity<Review>()
-                .HasOne<Movie>() // Each review is linked to a movie
+          modelBuilder.Entity<Review>()
+                .HasOne<Movie>(r => r.Movie)
                 .WithMany(m => m.Reviews)
                 .HasForeignKey(r => r.MovieId);
 
             modelBuilder.Entity<Review>()
-                .HasOne<User>()
+                .HasOne<User>(r => r.User)
                 .WithMany(u => u.Reviews)
                 .HasForeignKey(r => r.UserId);
 

@@ -1,6 +1,8 @@
 using CineBuzzApi.Data;
 using CineBuzzApi.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CineBuzzApi.Services
 {
@@ -15,7 +17,9 @@ namespace CineBuzzApi.Services
 
         public async Task<IEnumerable<Review>> GetReviewsByMovieIdAsync(int movieId)
         {
-            return await _context.Reviews.Where(r => r.MovieId == movieId).ToListAsync();
+            return await _context.Reviews
+                                 .Where(r => r.MovieId == movieId)
+                                 .ToListAsync();
         }
 
         public async Task<Review> GetReviewByIdAsync(int reviewId)
@@ -33,6 +37,7 @@ namespace CineBuzzApi.Services
         {
             var existingReview = await _context.Reviews.FindAsync(reviewId);
             if (existingReview == null) return false;
+
             existingReview.Content = review.Content;
             return await _context.SaveChangesAsync() > 0;
         }
@@ -41,6 +46,7 @@ namespace CineBuzzApi.Services
         {
             var review = await _context.Reviews.FindAsync(reviewId);
             if (review == null) return false;
+
             _context.Reviews.Remove(review);
             return await _context.SaveChangesAsync() > 0;
         }
